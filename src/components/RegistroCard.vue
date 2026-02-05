@@ -1,43 +1,51 @@
-﻿<template>
+<template>
   <link rel="stylesheet" href="../style.css">
   <div class="page">
     <div class="contenedor-login">
-      <div class="foto-container">
-        <img src="/src/assets/evol_positivo.png" class="card-foto" alt="">
-      </div>
-      <div class="card">
-        <h1>Registro</h1>
+      <div class="auth-shell">
+        <div class="media">
+          <img src="/src/assets/evol_positivo.png" class="card-foto" alt="">
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h1>Registro</h1>
+          </div>
 
-        <label>
-          Nombre.
-          <input type="text" placeholder="Nombre" />
-        </label>
+          <div class="card-body">
+            <label>
+              Nombre.
+              <input type="text" placeholder="Nombre" />
+            </label>
 
-        <label>
-          Apellidos.
-          <input type="text" placeholder="Apellidos" />
-        </label>
+            <label>
+              Apellidos.
+              <input type="text" placeholder="Apellidos" />
+            </label>
 
-        <label>
-          Correo.
-          <input type="email" placeholder="Correo" />
-        </label>
+            <label>
+              Correo.
+              <input type="email" placeholder="Correo" />
+            </label>
 
-        <label>
-          Contraseña
-          <input type="password" placeholder="********" />
-        </label>
+            <label>
+              Contraseña
+              <input type="password" placeholder="********" />
+            </label>
 
-        <label>
-          Repetir contraseña
-          <input type="password" placeholder="********" />
-        </label>
+            <label>
+              Repetir contraseña
+              <input type="password" placeholder="********" />
+            </label>
 
-        <button>Crear cuenta</button>
+            <button>Crear cuenta</button>
+          </div>
 
-        <p class="small">
-          ¿Ya tienes cuenta? <a href="#" @click.prevent>Inicia sesión</a>
-        </p>
+          <div class="card-footer">
+            <p class="small">
+              ¿Ya tienes cuenta? <a href="#" @click.prevent>Inicia sesión</a>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -45,72 +53,100 @@
 
 <style scoped>
 .contenedor-login {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 40px;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
   min-height: 100vh;
   background-image:
-    linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)),
+    linear-gradient(rgba(11, 15, 26, 0.7), rgba(11, 15, 26, 0.85)),
     url("/src/assets/evol_negativo.png");
+  background-size: cover;
+  background-position: center;
   font-family: var(--font-family);
 }
 
 .page {
   min-height: 100vh;
-  background: #f5f7fb;
+  background: var(--oscuro);
 }
 
-.card-foto {
-  width: 320px;
-  height: 355px;
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
+.auth-shell {
+  width: min(980px, 100%);
+  display: grid;
+  grid-template-columns: minmax(240px, 360px) minmax(320px, 1fr);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(11, 15, 26, 0.9);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
 }
 
-.foto-container {
+.media {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 0;
-  background: var(--verde);
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
-  overflow: hidden;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top, rgba(34, 197, 94, 0.25), transparent 60%),
+    linear-gradient(160deg, rgba(34, 197, 94, 0.18), rgba(11, 15, 26, 0.85));
+}
+
+.card-foto {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  object-fit: contain;
 }
 
 .card {
-  width: 350px;
-  padding: 24px;
-  background: var(--oscuro);
-  color: white;
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
+  padding: 28px 32px;
+  color: #f2f5ff;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: clamp(480px, 70vh, 560px);
+}
+
+.card-header h1 {
+  margin: 0;
+  font-size: clamp(22px, 2.4vw, 28px);
+  letter-spacing: 0.2px;
+}
+
+.card-body {
+  display: grid;
+  gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.card-footer {
+  margin-top: auto;
 }
 
 label {
-  display: block;
-  margin-top: 12px;
+  display: grid;
+  gap: 6px;
   font-size: 14px;
-  color: #cfd6e6;
+  color: rgba(242, 245, 255, 0.75);
 }
 
 input {
   width: 100%;
-  padding: 10px;
-  margin-top: 6px;
-  border: 1px solid #2a344b;
-  border-radius: 6px;
-  background: #0f1626;
+  padding: 10px 12px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 8px;
+  background: rgba(11, 15, 26, 0.9);
   color: #f2f5ff;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 input:focus {
   border-color: var(--verde);
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+  background: rgba(11, 15, 26, 0.75);
 }
 
 .row {
@@ -121,14 +157,16 @@ input:focus {
 
 button {
   width: 100%;
-  margin-top: 16px;
-  padding: 10px;
+  margin-top: 6px;
+  padding: 11px 12px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--verde);
   color: #0b0f1a;
   font-weight: 600;
+  letter-spacing: 0.2px;
   cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 button:hover {
@@ -140,7 +178,7 @@ button:active {
 }
 
 .small {
-  margin-top: 12px;
+  margin: 0;
   font-size: 13px;
   color: #b7bfd1;
 }
@@ -152,5 +190,33 @@ button:active {
 
 .small a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .media {
+    padding: 22px 16px;
+  }
+
+  .card {
+    height: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .contenedor-login {
+    padding: 20px 12px;
+  }
+
+  .card {
+    padding: 22px;
+  }
+
+  .card-foto {
+    max-width: 220px;
+  }
 }
 </style>
