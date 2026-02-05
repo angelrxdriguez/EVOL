@@ -2,7 +2,7 @@
   <link rel="stylesheet" href="../style.css">
   <div class="page">
     <div class="contenedor-login">
-      <div>
+      <div class="foto-container">
         <img src="/src/assets/evol_positivo.png" class="card-foto" alt="">
       </div>
       <div class="card">
@@ -51,7 +51,9 @@
   justify-content: center;
   gap: 40px;
   min-height: 100vh;
-  background: var(--oscuro);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)),
+    url("/src/assets/evol_negativo.png");
   font-family: var(--font-family);
 }
 
@@ -62,9 +64,20 @@
 
 .card-foto {
   width: 320px;
-  height: 300px;
-  max-width: 40vw;
-  padding: 20px;
+  height: 355px;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+
+.foto-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  background: var(--verde);
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  overflow: hidden;
 }
 
 .card {
@@ -72,10 +85,8 @@
   padding: 24px;
   background: var(--oscuro);
   color: white;
-  border-radius: 12px;
-  border-top: 4px solid var(--verde);
-  border-bottom: 4px solid var(--verde);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
 }
 
 label {
