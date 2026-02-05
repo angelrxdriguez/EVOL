@@ -146,7 +146,6 @@ button {
   color: #0b0f1a;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.08s ease, filter 0.2s ease;
 }
 
 button:hover {

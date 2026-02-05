@@ -73,6 +73,8 @@
   background: var(--oscuro);
   color: white;
   border-radius: 12px;
+  border-top: 4px solid var(--verde);
+  border-bottom: 4px solid var(--verde);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -116,7 +118,6 @@ button {
   color: #0b0f1a;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.08s ease, filter 0.2s ease;
 }
 
 button:hover {
