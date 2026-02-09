@@ -2,10 +2,21 @@ import 'dotenv/config'
 import express from 'express'
 import cron from 'node-cron'
 import axios from 'axios'
+import { MongoClient } from 'mongodb'
 
 const app = express()
+const MONGO_URI = 'mongodb+srv://angelrp:abc123.@cluster0.76po7.mongodb.net/?appName=Cluster0'
+const mongoClient = new MongoClient(MONGO_URI)
 
 const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_TEXT, PORT } = process.env
+
+async function connectMongo() {
+  try {
+    await mongoClient.connect()
+    mongoClient.db('evol').collection('evol')
+    console.log('Conectado a mongo')
+  } catch {}
+}
 
 async function sendTelegram(text) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`
@@ -23,6 +34,8 @@ cron.schedule('*/30 * * * *', async () => {
     console.error('Error', e?.response?.data || e.message)
   }
 })
+
+connectMongo()
 
 app.get('/health', (_, res) => res.send('ok'))
 app.listen(PORT || 3001, () => console.log('running'))
