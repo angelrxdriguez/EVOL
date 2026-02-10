@@ -201,20 +201,5 @@ button {
   cursor: pointer;
 }
 
-@media (max-width: 760px) {
-  .login-card {
-    max-width: 420px;
-    min-height: 560px;
-    flex-direction: column;
-  }
 
-  .contenedcor-evol {
-    width: 100%;
-    min-height: 180px;
-  }
-
-  .login-box {
-    width: 100%;
-  }
-}
 </style>

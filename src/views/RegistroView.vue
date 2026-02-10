@@ -211,20 +211,5 @@ button {
   cursor: pointer;
 }
 
-@media (max-width: 760px) {
-  .registro-card {
-    max-width: 420px;
-    min-height: 700px;
-    flex-direction: column;
-  }
 
-  .contenedor-evol {
-    width: 100%;
-    min-height: 180px;
-  }
-
-  .form-box {
-    width: 100%;
-  }
-}
 </style>
