@@ -35,7 +35,8 @@ async function entrar() {
     }
 
     localStorage.setItem("user", JSON.stringify(data.user));
-    router.push({ name: "home" });
+    const esAdmin = Number(data?.user?.es_admin) === 1;
+    router.push({ name: esAdmin ? "admin" : "home" });
   } catch (e) {
     console.error("[login] Error al iniciar sesion:", e);
     errorMsg.value = "Error de red al iniciar sesion";

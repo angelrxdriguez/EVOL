@@ -19,8 +19,7 @@ import logoEvol from "../assets/evol_negativo-zoom2.png";
 
     <section id="ventajas" class="intro">
       <h1>
-        <i class="bi bi-clipboard2-heart" aria-hidden="true"></i>
-        Ventajas para clientes
+        VENTAJAS DE NUESTRA APP
       </h1>
 
       <div class="ventajas-grid">
@@ -38,6 +37,10 @@ import logoEvol from "../assets/evol_negativo-zoom2.png";
           <i class="bi bi-megaphone" aria-hidden="true"></i>
           <p>Consulta novedades y avisos del gimnasio.</p>
         </article>
+
+        <a href="/clases" class="ventaja-item clases">
+          <p>VER CLASES</p>
+        </a>
       </div>
     </section>
   </div>
@@ -102,11 +105,11 @@ a:hover {
 .intro {
   max-width: 950px;
   margin: 48px auto 0;
+  margin-top: 150px;
   color: #ffffff;
-  background-color: var(--oscuro);
-  border: 1px solid #ffffff;
+  background-color: #0b0f1ac7;
   border-radius: 12px;
-  padding: 20px;
+  padding: 50px;
 }
 
 .intro h1 {
@@ -142,6 +145,29 @@ a:hover {
 .ventaja-item p {
   margin: 0;
   line-height: 1.3;
+}
+
+.clases {
+  grid-column: 1 / -1;
+  justify-content: center;
+  margin: 0;
+  margin-top: 150px;
+  margin-bottom: 50px;
+  margin-left: 50px;
+  margin-right: 50px;
+  padding: 14px;
+  border-bottom: 1px solid #ffffff;
+  transition: 0.4s;
+}
+
+.clases:hover {
+  background-color: var(--verde);
+  color: var(--oscuro);
+  border-color: var(--verde);
+}
+
+.clases:hover i {
+  color: var(--oscuro);
 }
 
 @media (max-width: 800px) {

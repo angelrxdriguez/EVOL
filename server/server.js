@@ -129,11 +129,14 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Usuario o contrasena incorrectos' })
     }
 
+    const esAdmin = Number(user.es_admin) === 1 ? 1 : 0
+
     return res.json({
       ok: true,
       user: {
         id: String(user._id),
         nombreUsuario: user.nombreUsuario,
+        es_admin: esAdmin,
         rol: user.rol || 'user',
         nombre: user.nombre || '',
         apellidos: user.apellidos || '',
