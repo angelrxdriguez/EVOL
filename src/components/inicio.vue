@@ -155,6 +155,7 @@ input {
   padding: 10px;
   border-radius: 6px;
   background-color: var(--oscuro);
+  color: white;
   font-size: 14px;
   border: none;
 }

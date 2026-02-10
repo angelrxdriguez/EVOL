@@ -149,12 +149,13 @@ input {
   padding: 10px;
   border-radius: 6px;
   background-color: var(--oscuro);
+  color: white;
   font-size: 14px;
   border: none;
 }
 input:focus{
   background-color: #a4ffc5;
-  color: white;
+  color: black;
   border:none;
   transition: 0.5s;
 }
