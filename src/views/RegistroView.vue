@@ -1,14 +1,15 @@
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "../router";
 import logoEvol from "../assets/evol_positivo.png";
 
-const emit = defineEmits(["irInicio"]);
 const nombreUsuario = ref("");
 const nombre = ref("");
 const apellidos = ref("");
 const contrasena = ref("");
 const repetirContrasena = ref("");
 const errorRegistro = ref("");
+const router = useRouter();
 
 async function crearCuenta() {
   if (!contrasena.value || contrasena.value !== repetirContrasena.value) {
@@ -39,7 +40,7 @@ async function crearCuenta() {
     }
 
     if (data?.ok === true) {
-      emit("irInicio");
+      router.push({ name: "inicio" });
       return;
     }
 
@@ -47,6 +48,10 @@ async function crearCuenta() {
   } catch (e) {
     errorRegistro.value = "Error de red al crear usuario";
   }
+}
+
+function irAInicio() {
+  router.push({ name: "inicio" });
 }
 
 </script>
@@ -81,7 +86,7 @@ async function crearCuenta() {
 
         <p class="inicio-texto">
           Ya tienes cuenta?
-          <button class="inicio-link" type="button" @click="emit('irInicio')">
+          <button class="inicio-link" type="button" @click="irAInicio">
             Haz click aqui para iniciar sesion
           </button>
         </p>
@@ -96,7 +101,7 @@ async function crearCuenta() {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url("/src/assets/banner_login2.jpg");
+  background-image: url("../assets/banner_login2.jpg");
   background-size: cover;
   background-color: rgba(0, 0, 0, 0.418);  
   background-blend-mode: multiply;    /*sin esto no va el back*/

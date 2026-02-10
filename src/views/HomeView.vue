@@ -1,12 +1,16 @@
+<script setup>
+import logoEvol from "../assets/evol_negativo-zoom2.png";
+</script>
+
 <template>
   <div class="home">
     <nav class="navbar">
-    <a href="inicio" class="logo-link">
-      <img src="/src/assets/evol_negativo-zoom2.png" alt="Evol" class="logo" />
-    </a>
+      <RouterLink to="/" class="logo-link">
+        <img :src="logoEvol" alt="Evol" class="logo" />
+      </RouterLink>
 
       <div class="links">
-        <a href="home">Inicio</a>
+        <RouterLink to="/home">Inicio</RouterLink>
         <a href="#">Clases</a>
         <a href="#">Productos</a>
         <a href="#">Contacto</a>
@@ -18,7 +22,7 @@
 <style scoped>
 .home {
   min-height: 100vh;
-  background-image: url("/src/assets/banner_login2.jpg");
+  background-image: url("../assets/banner_login2.jpg");
   background-size: cover;
   background-color: rgba(0, 0, 0, 0.418);  
   background-position: center;

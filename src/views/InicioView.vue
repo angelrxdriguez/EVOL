@@ -1,12 +1,12 @@
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "../router";
 import logoEvol from "../assets/evol_positivo.png";
-
-const emit = defineEmits(["irRegistro", "irHome"]);
 
 const nombreUsuario = ref("");
 const contrasena = ref("");
 const errorMsg = ref("");
+const router = useRouter();
 
 async function entrar() {
   errorMsg.value = "";
@@ -35,11 +35,15 @@ async function entrar() {
     }
 
     localStorage.setItem("user", JSON.stringify(data.user));
-    emit("irHome");
+    router.push({ name: "home" });
   } catch (e) {
     console.error("[login] Error al iniciar sesion:", e);
     errorMsg.value = "Error de red al iniciar sesion";
   }
+}
+
+function irARegistro() {
+  router.push({ name: "registro" });
 }
 </script>
 
@@ -77,7 +81,7 @@ async function entrar() {
 
         <p class="registro-texto">
           Aun no tienes cuenta?
-          <button class="registro-link" type="button" @click="emit('irRegistro')">
+          <button class="registro-link" type="button" @click="irARegistro">
             Haz click aqui para registrarte
           </button>
         </p>
@@ -95,7 +99,7 @@ async function entrar() {
   align-items: center;
   padding: 20px;
   font-family: var(--font-family);
-  background-image: url("/src/assets/banner_login2.jpg");
+  background-image: url("../assets/banner_login2.jpg");
   background-size: cover;
   background-color: rgba(0, 0, 0, 0.418);  
   background-blend-mode: multiply;    /*sin esto no va el back*/
@@ -214,4 +218,3 @@ button {
   }
 }
 </style>
-
