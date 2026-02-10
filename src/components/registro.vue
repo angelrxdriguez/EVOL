@@ -8,12 +8,15 @@ const nombre = ref("");
 const apellidos = ref("");
 const contrasena = ref("");
 const repetirContrasena = ref("");
+const errorRegistro = ref("");
 
 async function crearCuenta() {
   if (!contrasena.value || contrasena.value !== repetirContrasena.value) {
-    console.error("[registro] Contrasena vacia o no coincide");
+    errorRegistro.value = "La contrasena esta vacia o no coincide";
     return;
   }
+
+  errorRegistro.value = "";
 
   try {
     const resp = await fetch("/api/registro", {
@@ -31,14 +34,18 @@ async function crearCuenta() {
     console.log("STATUS:", resp.status, "RESP:", data);
 
     if (!resp.ok) {
+      errorRegistro.value = data?.error || "No se pudo crear la cuenta";
       return;
     }
 
     if (data?.ok === true) {
       emit("irInicio");
+      return;
     }
+
+    errorRegistro.value = "No se pudo crear la cuenta";
   } catch (e) {
-    console.error("[registro] Error de red al crear usuario:", e);
+    errorRegistro.value = "Error de red al crear usuario";
   }
 }
 
@@ -70,6 +77,7 @@ async function crearCuenta() {
         <input id="repetir-contrasena" v-model="repetirContrasena" type="password" placeholder="Repite tu contrasena" />
 
         <button type="button" @click="crearCuenta">Crear cuenta</button>
+        <p v-if="errorRegistro" class="error-texto">{{ errorRegistro }}</p>
 
         <p class="inicio-texto">
           Ya tienes cuenta?
@@ -175,6 +183,13 @@ button {
   margin: 14px 0 0 0;
   text-align: center;
   color: white;
+  font-size: 14px;
+}
+
+.error-texto {
+  margin: 12px 0 0 0;
+  text-align: center;
+  color: #f87171;
   font-size: 14px;
 }
 

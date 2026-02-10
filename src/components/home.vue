@@ -18,7 +18,7 @@
 <style scoped>
 .home {
   min-height: 100vh;
-  background-image: url("/src/assets/banner_login.jpg");
+  background-image: url("/src/assets/banner_login2.jpg");
   background-size: cover;
   background-color: rgba(0, 0, 0, 0.418);  
   background-position: center;
