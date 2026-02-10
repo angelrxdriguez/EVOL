@@ -1,7 +1,38 @@
 <script setup>
+import { ref } from "vue";
 import logoEvol from "../assets/evol_positivo.png";
 
-const emit = defineEmits(["irRegistro"]);
+const emit = defineEmits(["irRegistro", "irHome"]);
+
+const nombreUsuario = ref("");
+const contrasena = ref("");
+const errorMsg = ref("");
+
+async function entrar() {
+  errorMsg.value = "";
+
+  const resp = await fetch("http://localhost:3002/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nombreUsuario: nombreUsuario.value,
+      contrasena: contrasena.value,
+    }),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok || !data.ok) {
+    errorMsg.value = data.error || "No se pudo iniciar sesión";
+    return;
+  }
+
+  // opcional: guardar el usuario para usarlo en home
+  localStorage.setItem("user", JSON.stringify(data.user));
+
+  // ✅ “redirigir” a home.vue (tu App debe escuchar este emit)
+  emit("irHome");
+}
 </script>
 
 <template>
@@ -15,12 +46,26 @@ const emit = defineEmits(["irRegistro"]);
         <h1>Iniciar sesion</h1>
 
         <label for="usuario">Usuario</label>
-        <input id="usuario" type="text" placeholder="Escribe tu usuario" />
+        <input
+          id="usuario"
+          v-model="nombreUsuario"
+          type="text"
+          placeholder="Escribe tu usuario"
+        />
 
         <label for="contrasena">Contrasena</label>
-        <input id="contrasena" type="password" placeholder="Escribe tu contrasena" />
+        <input
+          id="contrasena"
+          v-model="contrasena"
+          type="password"
+          placeholder="Escribe tu contrasena"
+        />
 
-        <button type="button">Entrar</button>
+        <p v-if="errorMsg" style="color:#ffb4b4; margin: 6px 0 10px;">
+          {{ errorMsg }}
+        </p>
+
+        <button type="button" @click="entrar">Entrar</button>
 
         <p class="registro-texto">
           Aun no tienes cuenta?
@@ -32,6 +77,7 @@ const emit = defineEmits(["irRegistro"]);
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .inicio {
@@ -52,7 +98,8 @@ const emit = defineEmits(["irRegistro"]);
   max-width: 820px;
   min-height: 470px;
   display: flex;
-  background-color: #ffffff;
+  background-color: var(--oscuro);
+  color: var(--verde);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -82,7 +129,7 @@ const emit = defineEmits(["irRegistro"]);
 
 h1 {
   margin-bottom: 18px ;
-  color: var(--oscuro);
+  color: var(--verde);
   font-size: 24px;
   text-align: center;
 }
@@ -90,19 +137,25 @@ h1 {
 label {
   display: block;
   margin-bottom: 6px;
-  color: var(--oscuro);
+  color: var(--verde);
   font-weight: 600;
 }
 
 input {
   width: 100%;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   padding: 10px;
-  border: 1px solid #cbd5e1;
   border-radius: 6px;
+  background-color: var(--oscuro);
   font-size: 14px;
+  border: none;
 }
-
+input:focus{
+  background-color: #a4ffc5;
+  color: black;
+  border:none;
+  transition: 0.5s;
+}
 button {
   width: 100%;
   padding: 10px;
@@ -118,7 +171,7 @@ button {
 .registro-texto {
   margin: 14px 0 0 0;
   text-align: center;
-  color: var(--oscuro);
+  color: white;
   font-size: 14px;
 }
 

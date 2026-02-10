@@ -52,7 +52,7 @@ async function crearCuenta() {
       </div>
 
       <div class="form-box">
-        <h1>Registro</h1>
+        <h1>Bienvenido</h1>
 
         <label for="nombre-usuario">Nombre de usuario</label>
         <input id="nombre-usuario" v-model="nombreUsuario" type="text" placeholder="Escribe tu nombre de usuario" />
@@ -101,7 +101,7 @@ async function crearCuenta() {
   max-width: 820px;
   min-height: 560px;
   display: flex;
-  background-color: #ffffff;
+  background-color: var(--oscuro);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -131,7 +131,7 @@ async function crearCuenta() {
 
 h1 {
   margin: 0 0 18px 0;
-  color: var(--oscuro);
+  color: var(--verde);
   font-size: 24px;
   text-align: center;
 }
@@ -139,7 +139,7 @@ h1 {
 label {
   display: block;
   margin-bottom: 6px;
-  color: var(--oscuro);
+  color: var(--verde);
   font-weight: 600;
 }
 
@@ -147,11 +147,17 @@ input {
   width: 100%;
   margin-bottom: 12px;
   padding: 10px;
-  border: 1px solid #cbd5e1;
   border-radius: 6px;
+  background-color: var(--oscuro);
   font-size: 14px;
+  border: none;
 }
-
+input:focus{
+  background-color: #a4ffc5;
+  color: white;
+  border:none;
+  transition: 0.5s;
+}
 button {
   width: 100%;
   padding: 10px;
@@ -167,7 +173,7 @@ button {
 .inicio-texto {
   margin: 14px 0 0 0;
   text-align: center;
-  color: var(--oscuro);
+  color: white;
   font-size: 14px;
 }
 
