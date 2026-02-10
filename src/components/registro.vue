@@ -1,7 +1,47 @@
 <script setup>
+import { ref } from "vue";
 import logoEvol from "../assets/evol_positivo.png";
 
 const emit = defineEmits(["irInicio"]);
+const nombreUsuario = ref("");
+const nombre = ref("");
+const apellidos = ref("");
+const contrasena = ref("");
+const repetirContrasena = ref("");
+
+async function crearCuenta() {
+  if (!contrasena.value || contrasena.value !== repetirContrasena.value) {
+    console.error("[registro] Contrasena vacia o no coincide");
+    return;
+  }
+
+  try {
+    const resp = await fetch("/api/registro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombreUsuario: nombreUsuario.value,
+        nombre: nombre.value,
+        apellidos: apellidos.value,
+        contrasena: contrasena.value,
+      }),
+    });
+
+    const data = await resp.json().catch(() => ({}));
+    console.log("STATUS:", resp.status, "RESP:", data);
+
+    if (!resp.ok) {
+      return;
+    }
+
+    if (data?.ok === true) {
+      emit("irInicio");
+    }
+  } catch (e) {
+    console.error("[registro] Error de red al crear usuario:", e);
+  }
+}
+
 </script>
 
 <template>
@@ -15,21 +55,21 @@ const emit = defineEmits(["irInicio"]);
         <h1>Registro</h1>
 
         <label for="nombre-usuario">Nombre de usuario</label>
-        <input id="nombre-usuario" type="text" placeholder="Escribe tu nombre de usuario" />
+        <input id="nombre-usuario" v-model="nombreUsuario" type="text" placeholder="Escribe tu nombre de usuario" />
 
         <label for="nombre">Nombre</label>
-        <input id="nombre" type="text" placeholder="Escribe tu nombre" />
+        <input id="nombre" v-model="nombre" type="text" placeholder="Escribe tu nombre" />
 
         <label for="apellidos">Apellidos</label>
-        <input id="apellidos" type="text" placeholder="Escribe tus apellidos" />
+        <input id="apellidos" v-model="apellidos" type="text" placeholder="Escribe tus apellidos" />
 
         <label for="contrasena">Contrasena</label>
-        <input id="contrasena" type="password" placeholder="Escribe tu contrasena" />
+        <input id="contrasena" v-model="contrasena" type="password" placeholder="Escribe tu contrasena" />
 
         <label for="repetir-contrasena">Repetir contrasena</label>
-        <input id="repetir-contrasena" type="password" placeholder="Repite tu contrasena" />
+        <input id="repetir-contrasena" v-model="repetirContrasena" type="password" placeholder="Repite tu contrasena" />
 
-        <button type="button">Crear cuenta</button>
+        <button type="button" @click="crearCuenta">Crear cuenta</button>
 
         <p class="inicio-texto">
           Ya tienes cuenta?
@@ -48,8 +88,9 @@ const emit = defineEmits(["irInicio"]);
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url("/src/assets/evol_negativo.png");
-  background-color: rgba(0, 0, 0, 0.45);  
+  background-image: url("/src/assets/banner_login2.jpg");
+  background-size: cover;
+  background-color: rgba(0, 0, 0, 0.418);  
   background-blend-mode: multiply;    /*sin esto no va el back*/
   padding: 20px;
   font-family: var(--font-family);

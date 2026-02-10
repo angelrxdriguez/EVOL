@@ -41,9 +41,9 @@ const emit = defineEmits(["irRegistro"]);
   align-items: center;
   padding: 20px;
   font-family: var(--font-family);
-
-  background-image: url("/src/assets/evol_negativo.png");
-  background-color: rgba(0, 0, 0, 0.45);  
+  background-image: url("/src/assets/banner_login2.jpg");
+  background-size: cover;
+  background-color: rgba(0, 0, 0, 0.418);  
   background-blend-mode: multiply;    /*sin esto no va el back*/
 }
 
