@@ -11,27 +11,35 @@ const errorMsg = ref("");
 async function entrar() {
   errorMsg.value = "";
 
-  const resp = await fetch("http://localhost:3002/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nombreUsuario: nombreUsuario.value,
-      contrasena: contrasena.value,
-    }),
-  });
+  try {
+    const resp = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombreUsuario: nombreUsuario.value.trim(),
+        contrasena: contrasena.value,
+      }),
+    });
 
-  const data = await resp.json().catch(() => ({}));
+    const raw = await resp.text();
+    let data = {};
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch {
+      data = {};
+    }
 
-  if (!resp.ok || !data.ok) {
-    errorMsg.value = data.error || "No se pudo iniciar sesión";
-    return;
+    if (!resp.ok || !data.ok) {
+      errorMsg.value = data.error || `No se pudo iniciar sesion (HTTP ${resp.status})`;
+      return;
+    }
+
+    localStorage.setItem("user", JSON.stringify(data.user));
+    emit("irHome");
+  } catch (e) {
+    console.error("[login] Error al iniciar sesion:", e);
+    errorMsg.value = "Error de red al iniciar sesion";
   }
-
-  // opcional: guardar el usuario para usarlo en home
-  localStorage.setItem("user", JSON.stringify(data.user));
-
-  // ✅ “redirigir” a home.vue (tu App debe escuchar este emit)
-  emit("irHome");
 }
 </script>
 
@@ -205,3 +213,4 @@ button {
   }
 }
 </style>
+

@@ -12,10 +12,9 @@ dotenv.config({ path: path.join(__dirname, '.env') })
 
 const app = express()
 
-// ⚠️ Si tu contraseña NO lleva punto, quítalo (ese "." suele ser un typo)
 const MONGO_URI =
   process.env.MONGO_URI ||
-  'mongodb+srv://angelrp:abc123@cluster0.76po7.mongodb.net/?appName=Cluster0'
+  'mongodb+srv://angelrp:abc123.@cluster0.76po7.mongodb.net/?appName=Cluster0'
 
 const mongoClient = new MongoClient(MONGO_URI)
 let usuariosCollection
