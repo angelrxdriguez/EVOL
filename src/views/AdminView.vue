@@ -8,10 +8,10 @@
       </header>
 
       <nav class="menu" aria-label="Menu de administracion">
-        <a href="#" class="opcion">
+        <RouterLink to="/clases" class="opcion">
           <span class="opcion-title">Gestionar clases</span>
           <span class="opcion-desc">Crear, editar o ocultar clases.</span>
-        </a>
+        </RouterLink>
         <a href="#" class="opcion">
           <span class="opcion-title">Gestionar usuarios</span>
           <span class="opcion-desc">Revisar perfiles y permisos.</span>
@@ -39,7 +39,6 @@
 .admin-card {
   width: 100%;
   max-width: 960px;
-  border: 1px solid #ffffff;
   border-radius: 14px;
   padding: clamp(20px, 3vw, 30px);
   background-color: rgba(11, 15, 26, 0.9);

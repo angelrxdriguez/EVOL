@@ -50,7 +50,7 @@ async function crearCuenta() {
   }
 }
 
-function irAInicio() {
+function irInicio() {
   router.push({ name: "inicio" });
 }
 
@@ -86,7 +86,7 @@ function irAInicio() {
 
         <p class="inicio-texto">
           Ya tienes cuenta?
-          <button class="inicio-link" type="button" @click="irAInicio">
+          <button class="inicio-link" type="button" @click="irInicio">
             Haz click aqui para iniciar sesion
           </button>
         </p>

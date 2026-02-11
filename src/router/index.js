@@ -3,6 +3,7 @@ import InicioView from "../views/InicioView.vue";
 import RegistroView from "../views/RegistroView.vue";
 import HomeView from "../views/HomeView.vue";
 import AdminView from "../views/AdminView.vue";
+import ClasesView from "../views/ClasesView.vue";
 
 const ROUTER_KEY = Symbol("app-router");
 
@@ -11,6 +12,7 @@ const routeTable = [
   { path: "/registro", name: "registro", component: RegistroView },
   { path: "/home", name: "home", component: HomeView },
   { path: "/admin", name: "admin", component: AdminView },
+  { path: "/clases", name: "clases", component: ClasesView },
 ];
 
 const fallbackRouteName = "inicio";

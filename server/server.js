@@ -18,6 +18,7 @@ const MONGO_URI =
 
 const mongoClient = new MongoClient(MONGO_URI)
 let usuariosCollection
+let clasesCollection
 
 const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_TEXT, PORT } = process.env
 const SERVER_PORT = Number(PORT) || 3002
@@ -42,6 +43,7 @@ async function connectMongo() {
   await mongoClient.connect()
   await mongoClient.db('evol').command({ ping: 1 })
   usuariosCollection = mongoClient.db('evol').collection('usuarios')
+  clasesCollection = mongoClient.db('evol').collection('clases')
   await usuariosCollection.createIndex({ nombreUsuario: 1 }, { unique: true })
 }
 
@@ -141,6 +143,70 @@ app.post('/login', async (req, res) => {
         nombre: user.nombre || '',
         apellidos: user.apellidos || '',
       },
+    })
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message })
+  }
+})
+
+app.get('/clases', async (_, res) => {
+  try {
+    if (!clasesCollection) {
+      return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
+    }
+
+    const clases = await clasesCollection.find({}).sort({ fechaHora: 1 }).toArray()
+    return res.json({ ok: true, clases })
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message })
+  }
+})
+
+app.post('/clases', async (req, res) => {
+  try {
+    if (!clasesCollection) {
+      return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
+    }
+
+    const nombre = String(req.body?.nombre || '').trim()
+    const descripcion = String(req.body?.descripcion || '').trim()
+    const fechaHoraRaw = req.body?.fechaHora
+    const fechaHora = new Date(fechaHoraRaw)
+    const plazasMaximas = Number(req.body?.plazasMaximas)
+    const estado = String(req.body?.estado || 'activa').trim() || 'activa'
+
+    if (!nombre) {
+      return res.status(400).json({ ok: false, error: 'El nombre es obligatorio' })
+    }
+
+    if (!descripcion) {
+      return res.status(400).json({ ok: false, error: 'La descripcion es obligatoria' })
+    }
+
+    if (Number.isNaN(fechaHora.getTime())) {
+      return res.status(400).json({ ok: false, error: 'La fechaHora no es valida' })
+    }
+
+    if (!Number.isInteger(plazasMaximas) || plazasMaximas <= 0) {
+      return res
+        .status(400)
+        .json({ ok: false, error: 'plazasMaximas debe ser un entero mayor que 0' })
+    }
+
+    const nuevaClase = {
+      nombre,
+      descripcion,
+      fechaHora,
+      plazasMaximas,
+      estado,
+      createdAt: new Date(),
+    }
+
+    const result = await clasesCollection.insertOne(nuevaClase)
+    return res.status(201).json({
+      ok: true,
+      id: String(result.insertedId),
+      clase: { _id: String(result.insertedId), ...nuevaClase },
     })
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message })
