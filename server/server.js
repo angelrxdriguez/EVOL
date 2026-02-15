@@ -173,7 +173,6 @@ app.post('/clases', async (req, res) => {
     const fechaHoraRaw = req.body?.fechaHora
     const fechaHora = new Date(fechaHoraRaw)
     const plazasMaximas = Number(req.body?.plazasMaximas)
-    const estado = String(req.body?.estado || 'activa').trim() || 'activa'
 
     if (!nombre) {
       return res.status(400).json({ ok: false, error: 'El nombre es obligatorio' })
@@ -198,8 +197,6 @@ app.post('/clases', async (req, res) => {
       descripcion,
       fechaHora,
       plazasMaximas,
-      estado,
-      createdAt: new Date(),
     }
 
     const result = await clasesCollection.insertOne(nuevaClase)

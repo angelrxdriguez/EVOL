@@ -37,6 +37,15 @@ function reiniciarFormulario() {
   form.value = { ...FORM_INICIAL };
 }
 
+function construirPayloadClase(fechaHoraISO) {
+  return {
+    nombre: String(form.value.nombre || "").trim(),
+    descripcion: String(form.value.descripcion || "").trim(),
+    fechaHora: fechaHoraISO,
+    plazasMaximas: Number(form.value.plazasMaximas),
+  };
+}
+
 function construirFechaHoraISO(fecha, hora) {
   if (!fecha || !hora) return "";
 
@@ -120,12 +129,7 @@ async function crearClase() {
       return;
     }
 
-    const payload = {
-      nombre: form.value.nombre.trim(),
-      descripcion: form.value.descripcion.trim(),
-      fechaHora: fechaHoraISO,
-      plazasMaximas: Number(form.value.plazasMaximas),
-    };
+    const payload = construirPayloadClase(fechaHoraISO);
 
     const response = await fetch("/api/clases", {
       method: "POST",
@@ -497,22 +501,5 @@ tbody td:last-child {
 .vacio {
   text-align: center;
   color: #93a4ba;
-}
-
-@media (max-width: 1120px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 860px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .list-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
 }
 </style>

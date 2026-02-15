@@ -11,7 +11,7 @@ import logoEvol from "../assets/evol_negativo-zoom2.png";
 
       <div class="links">
         <RouterLink to="/home">Inicio</RouterLink>
-        <a href="#">Clases</a>
+        <RouterLink to="/inscribir-clase">Clases</RouterLink>
         <a href="#">Mis clases</a>
         <a href="#">Perfil</a>
       </div>
@@ -38,9 +38,9 @@ import logoEvol from "../assets/evol_negativo-zoom2.png";
           <p>Consulta novedades y avisos del gimnasio.</p>
         </article>
 
-        <a href="/clases" class="ventaja-item clases">
+        <RouterLink to="/inscribir-clase" class="ventaja-item clases">
           <p>VER CLASES</p>
-        </a>
+        </RouterLink>
       </div>
     </section>
   </div>
