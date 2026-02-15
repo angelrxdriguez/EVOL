@@ -160,7 +160,6 @@ onMounted(() => {
       <section class="form-panel">
         <div class="panel-header">
           <h2>Nueva clase</h2>
-          <p>Formato simple para crear actividades.</p>
         </div>
 
         <form class="form-grid" @submit.prevent="crearClase">
@@ -256,17 +255,16 @@ onMounted(() => {
 
 <style scoped>
 .clases-page {
-  color : var(--verde);
   min-height: 100vh;
   padding: clamp(20px, 4vw, 46px);
   font-family: var(--font-family);
   color: #d3dae4;
-  background-color: #0d1420;
+  background-color: var(--oscuro);
 }
 
 .topbar {
   width: min(1400px, 100%);
-  margin: 0 auto 24px;
+  margin:24px;
 }
 
 .headline {
@@ -283,7 +281,8 @@ onMounted(() => {
   padding: 10px 14px;
   color: #c8d0db;
   text-decoration: none;
-  border-radius: 999px;
+  border: 1px solid #ffffff;
+  border-radius: 8px;
   background-color: rgba(18, 28, 42, 0.75);
   transition: background-color 0.2s ease;
 }
@@ -291,33 +290,31 @@ onMounted(() => {
 .nav-link:hover,
 .nav-link:focus-visible {
   color: #e5ebf2;
-  background-color: rgba(127, 180, 151, 0.22);
+  background-color: rgba(0, 230, 103, 0.22);
   outline: none;
 }
 
 .nav-link.active {
   color: #0c1723;
-  background-color: var(--acento-suave);
+  background-color: var(--verde);
   font-weight: 700;
 }
 
 .eyebrow {
   margin: 0 0 8px;
-  color: var(--acento-suave);
+  color: var(--verde);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 h1 {
-  margin: 0 0 8px;
-  color: var(--acento-suave);
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  color: var(--verde);
 }
 
 .subtitle {
   margin: 0;
-  color: var(--texto-suave);
+  color: #cbd5e1;
 }
 
 .content-grid {
@@ -350,7 +347,7 @@ h1 {
 
 .panel-header h2 {
   margin: 0 0 4px;
-  color: var(--acento-suave);
+  color: var(--verde);
   font-size: 1.08rem;
 }
 
@@ -395,7 +392,7 @@ textarea {
 input:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--acento-suave);
+  border-color: var(--verde);
   box-shadow: 0 0 0 2px rgba(127, 180, 151, 0.18);
 }
 
@@ -418,19 +415,18 @@ textarea {
 }
 
 .btn {
-  border: 1px solid var(--acento-suave);
-  border-radius: 8px;
+  border: 1px solid #ffffff;
+  border-radius: 6px;
   padding: 9px 14px;
   background: transparent;
-  color: var(--acento-suave);
-  font-family: inherit;
+  color: #ffffff;
   cursor: pointer;
   font-weight: 600;
 }
 
 .btn:hover,
 .btn:focus-visible {
-  background-color: rgba(127, 180, 151, 0.14);
+  border-color: var(--verde);
   outline: none;
 }
 
@@ -440,14 +436,14 @@ textarea {
 }
 
 .btn.primary {
-  background-color: var(--acento-suave);
-  color: #07121d;
-  border-color: var(--acento-suave);
+  background-color: var(--verde);
+  color: #ffffff;
+  border-color: #ffffff;
   font-weight: 700;
 }
 
 .btn.ghost {
-  color: #c9e3d3;
+  color: #ffffff;
 }
 
 .msg {
@@ -460,7 +456,7 @@ textarea {
 }
 
 .msg.ok {
-  color: var(--acento-suave);
+  color: var(--verde);
 }
 
 .tabla-wrap {
@@ -484,7 +480,7 @@ td {
 }
 
 th {
-  color: #a6c6b3;
+  color: var(--verde);
   font-weight: 600;
   font-size: 0.84rem;
   text-transform: uppercase;
@@ -516,7 +512,6 @@ tbody td:last-child {
   display: inline-block;
   padding: 4px 10px;
   border-radius: 999px;
-  background-color: rgba(127, 180, 151, 0.16);
   color: #b4d3c0;
   text-transform: lowercase;
 }
