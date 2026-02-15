@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
 import path from 'node:path'
+import fs from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import cron from 'node-cron'
@@ -37,7 +38,45 @@ app.use((req, res, next) => {
   next()
 })
 
-app.use(express.json())
+app.use(express.json({ limit: '15mb' }))
+
+function limpiarNombreArchivo(nombreArchivo) {
+  const base = path.basename(String(nombreArchivo || '').trim())
+  return base.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim()
+}
+
+async function guardarImagenEnUploads(nombreArchivo, imagenContenidoBase64) {
+  const nombreLimpio = limpiarNombreArchivo(nombreArchivo)
+  if (!nombreLimpio) {
+    throw new Error('Nombre de imagen invalido')
+  }
+
+  const contenido = String(imagenContenidoBase64 || '').trim()
+  const buffer = Buffer.from(contenido, 'base64')
+  if (!buffer.length) {
+    throw new Error('Contenido de imagen invalido')
+  }
+
+  const uploadsDir = path.join(__dirname, '..', 'src', 'uploads')
+  await fs.mkdir(uploadsDir, { recursive: true })
+
+  const partes = path.parse(nombreLimpio)
+  let nombreFinal = nombreLimpio
+  let intento = 1
+
+  while (true) {
+    try {
+      await fs.access(path.join(uploadsDir, nombreFinal))
+      nombreFinal = `${partes.name}-${intento}${partes.ext}`
+      intento += 1
+    } catch {
+      break
+    }
+  }
+
+  await fs.writeFile(path.join(uploadsDir, nombreFinal), buffer)
+  return nombreFinal
+}
 
 async function connectMongo() {
   await mongoClient.connect()
@@ -173,6 +212,8 @@ app.post('/clases', async (req, res) => {
     const fechaHoraRaw = req.body?.fechaHora
     const fechaHora = new Date(fechaHoraRaw)
     const plazasMaximas = Number(req.body?.plazasMaximas)
+    const imagen = String(req.body?.imagen || '').trim()
+    const imagenContenido = String(req.body?.imagenContenido || '').trim()
 
     if (!nombre) {
       return res.status(400).json({ ok: false, error: 'El nombre es obligatorio' })
@@ -192,11 +233,22 @@ app.post('/clases', async (req, res) => {
         .json({ ok: false, error: 'plazasMaximas debe ser un entero mayor que 0' })
     }
 
+    if (!imagen) {
+      return res.status(400).json({ ok: false, error: 'La imagen es obligatoria' })
+    }
+
+    if (!imagenContenido) {
+      return res.status(400).json({ ok: false, error: 'Contenido de imagen obligatorio' })
+    }
+
+    const nombreImagenGuardada = await guardarImagenEnUploads(imagen, imagenContenido)
+
     const nuevaClase = {
       nombre,
       descripcion,
       fechaHora,
       plazasMaximas,
+      imagen: nombreImagenGuardada,
     }
 
     const result = await clasesCollection.insertOne(nuevaClase)

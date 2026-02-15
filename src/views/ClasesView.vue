@@ -7,6 +7,7 @@ const FORM_INICIAL = {
   fecha: "",
   hora: "",
   plazasMaximas: 20,
+  imagen: "",
 };
 
 const clases = ref([]);
@@ -15,6 +16,8 @@ const guardando = ref(false);
 const errorMsg = ref("");
 const okMsg = ref("");
 const form = ref({ ...FORM_INICIAL });
+const inputImagenRef = ref(null);
+const imagenArchivo = ref(null);
 
 const formateadorFecha = new Intl.DateTimeFormat("es-ES", {
   dateStyle: "short",
@@ -35,15 +38,43 @@ function limpiarMensajes() {
 
 function reiniciarFormulario() {
   form.value = { ...FORM_INICIAL };
+  imagenArchivo.value = null;
+  if (inputImagenRef.value) {
+    inputImagenRef.value.value = "";
+  }
 }
 
-function construirPayloadClase(fechaHoraISO) {
+async function construirPayloadClase(fechaHoraISO) {
+  const imagenContenido = await archivoABase64(imagenArchivo.value);
   return {
     nombre: String(form.value.nombre || "").trim(),
     descripcion: String(form.value.descripcion || "").trim(),
     fechaHora: fechaHoraISO,
     plazasMaximas: Number(form.value.plazasMaximas),
+    imagen: String(form.value.imagen || "").trim(),
+    imagenContenido,
   };
+}
+
+function manejarSeleccionImagen(event) {
+  const archivo = event?.target?.files?.[0];
+  imagenArchivo.value = archivo || null;
+  form.value.imagen = archivo?.name ? String(archivo.name).trim() : "";
+}
+
+function archivoABase64(archivo) {
+  if (!archivo) return Promise.resolve("");
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const resultado = String(reader.result || "");
+      const coma = resultado.indexOf(",");
+      resolve(coma >= 0 ? resultado.slice(coma + 1) : resultado);
+    };
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
+    reader.readAsDataURL(archivo);
+  });
 }
 
 function construirFechaHoraISO(fecha, hora) {
@@ -61,6 +92,8 @@ function validarFormulario() {
   const fecha = String(form.value.fecha || "").trim();
   const hora = String(form.value.hora || "").trim();
   const plazas = Number(form.value.plazasMaximas);
+  const imagen = String(form.value.imagen || "").trim();
+  const maxTamanoImagen = 5 * 1024 * 1024;
 
   if (!nombre) {
     return "El nombre es obligatorio";
@@ -80,6 +113,18 @@ function validarFormulario() {
 
   if (!Number.isInteger(plazas) || plazas <= 0) {
     return "Plazas maximas debe ser un entero mayor que 0";
+  }
+
+  if (!imagen) {
+    return "La imagen es obligatoria";
+  }
+
+  if (!imagenArchivo.value) {
+    return "Debes seleccionar un archivo de imagen";
+  }
+
+  if (imagenArchivo.value.size > maxTamanoImagen) {
+    return "La imagen no puede superar 5MB";
   }
 
   if (!construirFechaHoraISO(fecha, hora)) {
@@ -129,7 +174,11 @@ async function crearClase() {
       return;
     }
 
-    const payload = construirPayloadClase(fechaHoraISO);
+    const payload = await construirPayloadClase(fechaHoraISO);
+    if (!payload.imagenContenido) {
+      errorMsg.value = "No se pudo leer la imagen";
+      return;
+    }
 
     const response = await fetch("/api/clases", {
       method: "POST",
@@ -149,7 +198,7 @@ async function crearClase() {
     await cargarClases();
   } catch (e) {
     console.error("[clases] Error creando clase:", e);
-    errorMsg.value = "Error de red al crear clase";
+    errorMsg.value = "Error al crear clase";
   } finally {
     guardando.value = false;
   }
@@ -200,6 +249,20 @@ onMounted(cargarClases);
             Plazas maximas
             <input v-model.number="form.plazasMaximas" type="number" min="1" step="1" required />
           </label>
+
+          <label class="full">
+            Imagen
+            <input
+              ref="inputImagenRef"
+              type="file"
+              accept="image/*"
+              required
+              @change="manejarSeleccionImagen"
+            />
+            <small class="input-help">Archivo seleccionado: {{ form.imagen || "-" }}</small>
+            <small class="input-help">La imagen se copia automaticamente a src/uploads.</small>
+          </label>
+
           <label class="full">
             Descripcion
             <textarea
@@ -383,6 +446,11 @@ input:disabled {
 
 textarea {
   resize: vertical;
+}
+
+.input-help {
+  color: #93a4ba;
+  font-size: 0.8rem;
 }
 
 .full {
