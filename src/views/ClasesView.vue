@@ -1,21 +1,22 @@
 <script setup>
 import { onMounted, ref } from "vue";
 
+const FORM_INICIAL = {
+  nombre: "",
+  descripcion: "",
+  fecha: "",
+  hora: "",
+  plazasMaximas: 20,
+};
+
 const clases = ref([]);
 const cargando = ref(false);
 const guardando = ref(false);
 const errorMsg = ref("");
 const okMsg = ref("");
+const form = ref({ ...FORM_INICIAL });
 
-const form = ref({
-  nombre: "",
-  descripcion: "",
-  fechaHora: "",
-  plazasMaximas: 20,
-  estado: "activa",
-});
-
-const dateFormatter = new Intl.DateTimeFormat("es-ES", {
+const formateadorFecha = new Intl.DateTimeFormat("es-ES", {
   dateStyle: "short",
   timeStyle: "short",
 });
@@ -24,7 +25,7 @@ function formatearFecha(fechaISO) {
   if (!fechaISO) return "-";
   const fecha = new Date(fechaISO);
   if (Number.isNaN(fecha.getTime())) return "-";
-  return dateFormatter.format(fecha);
+  return formateadorFecha.format(fecha);
 }
 
 function limpiarMensajes() {
@@ -32,15 +33,62 @@ function limpiarMensajes() {
   okMsg.value = "";
 }
 
+function reiniciarFormulario() {
+  form.value = { ...FORM_INICIAL };
+}
+
+function construirFechaHoraISO(fecha, hora) {
+  if (!fecha || !hora) return "";
+
+  const fechaHora = new Date(`${fecha}T${hora}`);
+  if (Number.isNaN(fechaHora.getTime())) return "";
+
+  return fechaHora.toISOString();
+}
+
+function validarFormulario() {
+  const nombre = String(form.value.nombre || "").trim();
+  const descripcion = String(form.value.descripcion || "").trim();
+  const fecha = String(form.value.fecha || "").trim();
+  const hora = String(form.value.hora || "").trim();
+  const plazas = Number(form.value.plazasMaximas);
+
+  if (!nombre) {
+    return "El nombre es obligatorio";
+  }
+
+  if (!descripcion) {
+    return "La descripcion es obligatoria";
+  }
+
+  if (!fecha) {
+    return "La fecha es obligatoria";
+  }
+
+  if (!hora) {
+    return "La hora es obligatoria";
+  }
+
+  if (!Number.isInteger(plazas) || plazas <= 0) {
+    return "Plazas maximas debe ser un entero mayor que 0";
+  }
+
+  if (!construirFechaHoraISO(fecha, hora)) {
+    return "La fecha y hora no es valida";
+  }
+
+  return "";
+}
+
 async function cargarClases() {
   limpiarMensajes();
   cargando.value = true;
 
   try {
-    const resp = await fetch("/api/clases");
-    const data = await resp.json().catch(() => ({}));
+    const response = await fetch("/api/clases");
+    const data = await response.json().catch(() => ({}));
 
-    if (!resp.ok || data?.ok === false) {
+    if (!response.ok || data?.ok === false) {
       errorMsg.value = data?.error || "No se pudieron cargar las clases";
       return;
     }
@@ -52,36 +100,6 @@ async function cargarClases() {
   } finally {
     cargando.value = false;
   }
-}
-
-function validarFormulario() {
-  const nombre = String(form.value.nombre || "").trim();
-  const descripcion = String(form.value.descripcion || "").trim();
-  const fechaHora = String(form.value.fechaHora || "").trim();
-  const plazas = Number(form.value.plazasMaximas);
-
-  if (!nombre) {
-    return "El nombre es obligatorio";
-  }
-
-  if (!descripcion) {
-    return "La descripcion es obligatoria";
-  }
-
-  if (!fechaHora) {
-    return "La fecha y hora es obligatoria";
-  }
-
-  if (!Number.isInteger(plazas) || plazas <= 0) {
-    return "Plazas maximas debe ser un entero mayor que 0";
-  }
-
-  const fecha = new Date(fechaHora);
-  if (Number.isNaN(fecha.getTime())) {
-    return "La fecha y hora no es valida";
-  }
-
-  return "";
 }
 
 async function crearClase() {
@@ -96,35 +114,35 @@ async function crearClase() {
   guardando.value = true;
 
   try {
+    const fechaHoraISO = construirFechaHoraISO(form.value.fecha, form.value.hora);
+    if (!fechaHoraISO) {
+      errorMsg.value = "La fecha y hora no es valida";
+      return;
+    }
+
     const payload = {
       nombre: form.value.nombre.trim(),
       descripcion: form.value.descripcion.trim(),
-      fechaHora: new Date(form.value.fechaHora).toISOString(),
+      fechaHora: fechaHoraISO,
       plazasMaximas: Number(form.value.plazasMaximas),
       estado: "activa",
     };
 
-    const resp = await fetch("/api/clases", {
+    const response = await fetch("/api/clases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    const data = await resp.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({}));
 
-    if (!resp.ok || data?.ok === false) {
+    if (!response.ok || data?.ok === false) {
       errorMsg.value = data?.error || "No se pudo crear la clase";
       return;
     }
 
     okMsg.value = "Clase creada correctamente";
-    form.value = {
-      nombre: "",
-      descripcion: "",
-      fechaHora: "",
-      plazasMaximas: 20,
-      estado: "activa",
-    };
+    reiniciarFormulario();
     await cargarClases();
   } catch (e) {
     console.error("[clases] Error creando clase:", e);
@@ -134,9 +152,7 @@ async function crearClase() {
   }
 }
 
-onMounted(() => {
-  cargarClases();
-});
+onMounted(cargarClases);
 </script>
 
 <template>
@@ -147,13 +163,6 @@ onMounted(() => {
         <h1>Gestion de clases</h1>
         <p class="subtitle">Visualiza y crea clases de forma rapida.</p>
       </div>
-
-      <nav class="top-nav" aria-label="Navegacion de administracion">
-        <RouterLink to="/admin" class="nav-link">Panel admin</RouterLink>
-        <RouterLink to="/clases" class="nav-link active" aria-current="page">Gestionar clases</RouterLink>
-        <a href="#" class="nav-link">Gestionar usuarios</a>
-        <a href="#" class="nav-link">Gestionar reservas</a>
-      </nav>
     </header>
 
     <section class="content-grid">
@@ -175,20 +184,19 @@ onMounted(() => {
           </label>
 
           <label>
-            Fecha y hora
-            <input v-model="form.fechaHora" type="datetime-local" required />
+            Fecha
+            <input v-model="form.fecha" type="date" required />
+          </label>
+
+          <label>
+            Hora
+            <input v-model="form.hora" type="time" required />
           </label>
 
           <label>
             Plazas maximas
             <input v-model.number="form.plazasMaximas" type="number" min="1" step="1" required />
           </label>
-
-          <label>
-            Estado
-            <input :value="form.estado" type="text" disabled />
-          </label>
-
           <label class="full">
             Descripcion
             <textarea
@@ -269,35 +277,6 @@ onMounted(() => {
 
 .headline {
   margin-bottom: 16px;
-}
-
-.top-nav {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.nav-link {
-  padding: 10px 14px;
-  color: #c8d0db;
-  text-decoration: none;
-  border: 1px solid #ffffff;
-  border-radius: 8px;
-  background-color: rgba(18, 28, 42, 0.75);
-  transition: background-color 0.2s ease;
-}
-
-.nav-link:hover,
-.nav-link:focus-visible {
-  color: #e5ebf2;
-  background-color: rgba(0, 230, 103, 0.22);
-  outline: none;
-}
-
-.nav-link.active {
-  color: #0c1723;
-  background-color: var(--verde);
-  font-weight: 700;
 }
 
 .eyebrow {
