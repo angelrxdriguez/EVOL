@@ -125,7 +125,6 @@ async function crearClase() {
       descripcion: form.value.descripcion.trim(),
       fechaHora: fechaHoraISO,
       plazasMaximas: Number(form.value.plazasMaximas),
-      estado: "activa",
     };
 
     const response = await fetch("/api/clases", {
@@ -209,7 +208,7 @@ onMounted(cargarClases);
           </label>
 
           <div class="full form-actions">
-            <button class="btn primary" type="submit" :disabled="guardando">
+            <button class="btn primary text-dark" type="submit" :disabled="guardando">
               {{ guardando ? "Guardando..." : "Crear clase" }}
             </button>
           </div>
@@ -239,19 +238,17 @@ onMounted(cargarClases);
                 <th>Descripcion</th>
                 <th>Fecha y hora</th>
                 <th>Plazas</th>
-                <th>Estado</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="!clases.length && !cargando" class="fila-vacia">
-                <td colspan="5" class="vacio">No hay clases registradas.</td>
+                <td colspan="4" class="vacio">No hay clases registradas.</td>
               </tr>
               <tr v-for="clase in clases" :key="clase._id || `${clase.nombre}-${clase.fechaHora}`">
                 <td>{{ clase.nombre || "-" }}</td>
                 <td class="descripcion-col">{{ clase.descripcion || "-" }}</td>
                 <td>{{ formatearFecha(clase.fechaHora) }}</td>
                 <td>{{ clase.plazasMaximas ?? "-" }}</td>
-                <td><span class="badge-estado">{{ clase.estado || "-" }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -415,10 +412,16 @@ textarea {
 }
 
 .btn.primary {
-  background-color: var(--verde);
+  background-color: transparent;
   color: #ffffff;
   border-color: #ffffff;
   font-weight: 700;
+}
+
+.btn.primary:hover,
+.btn.primary:focus-visible {
+  background-color: var(--verde);
+  color: #ffffff;
 }
 
 .btn.ghost {
@@ -485,14 +488,6 @@ tbody td:last-child {
 
 .descripcion-col {
   max-width: 420px;
-}
-
-.badge-estado {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  color: #b4d3c0;
-  text-transform: lowercase;
 }
 
 .fila-vacia td {
