@@ -46,6 +46,13 @@ function limpiarNombreArchivo(nombreArchivo) {
   return base.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim()
 }
 
+function idAString(valor) {
+  if (valor == null) return ''
+  if (typeof valor === 'string') return valor.trim()
+  if (typeof valor.toHexString === 'function') return valor.toHexString()
+  return String(valor).trim()
+}
+
 async function guardarImagenEnUploads(nombreArchivo, imagenContenidoBase64) {
   const nombreLimpio = limpiarNombreArchivo(nombreArchivo)
   if (!nombreLimpio) {
@@ -294,6 +301,64 @@ app.post('/clases/:idClase/inscribirse', async (req, res) => {
     }
 
     return res.json({ ok: true, yaInscrito: result.modifiedCount === 0 })
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message })
+  }
+})
+
+app.get('/clases/usuario/:usuarioId', async (req, res) => {
+  try {
+    if (!clasesCollection) {
+      return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
+    }
+
+    const usuarioId = String(req.params?.usuarioId || '').trim()
+    if (!ObjectId.isValid(usuarioId)) {
+      return res.status(400).json({ ok: false, error: 'usuarioId invalido' })
+    }
+
+    const clasesTotales = await clasesCollection.find({}).sort({ fechaHora: 1 }).toArray()
+    const clases = clasesTotales.filter((clase) => {
+      const inscritos = Array.isArray(clase?.inscritos) ? clase.inscritos : []
+      return inscritos.some((id) => idAString(id) === usuarioId)
+    })
+
+    return res.json({ ok: true, clases })
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message })
+  }
+})
+
+app.post('/clases/:idClase/cancelar-inscripcion', async (req, res) => {
+  try {
+    if (!clasesCollection) {
+      return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
+    }
+
+    const idClaseRaw = String(req.params?.idClase || '').trim()
+    const usuarioIdRaw = String(req.body?.usuarioId || '').trim()
+
+    if (!ObjectId.isValid(idClaseRaw)) {
+      return res.status(400).json({ ok: false, error: 'idClase invalido' })
+    }
+
+    if (!ObjectId.isValid(usuarioIdRaw)) {
+      return res.status(400).json({ ok: false, error: 'usuarioId invalido' })
+    }
+
+    const idClase = new ObjectId(idClaseRaw)
+    const usuarioId = new ObjectId(usuarioIdRaw)
+
+    const result = await clasesCollection.updateOne(
+      { _id: idClase },
+      { $pull: { inscritos: { $in: [usuarioIdRaw, usuarioId] } } }
+    )
+
+    if (!result.matchedCount) {
+      return res.status(404).json({ ok: false, error: 'Clase no encontrada' })
+    }
+
+    return res.json({ ok: true, cancelada: result.modifiedCount > 0 })
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message })
   }

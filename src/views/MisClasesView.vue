@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import logoEvol from "../assets/evol_negativo-zoom2.png";
 
 const clases = ref([]);
@@ -7,34 +7,12 @@ const cargando = ref(false);
 const errorMsg = ref("");
 const okMsg = ref("");
 const usuarioId = ref("");
-const clasesInscribiendo = ref([]);
-
-function obtenerFechaLocalSinHora(valor) {
-  const fecha = new Date(valor);
-  if (Number.isNaN(fecha.getTime())) return "";
-
-  const anio = fecha.getFullYear();
-  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-  const dia = String(fecha.getDate()).padStart(2, "0");
-
-  return `${anio}-${mes}-${dia}`;
-}
-
-function obtenerHoraLocal(valor) {
-  const fecha = new Date(valor);
-  if (Number.isNaN(fecha.getTime())) return "-";
-
-  return fecha.toLocaleTimeString("es-ES", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+const clasesCancelando = ref([]);
 
 function obtenerUsuarioIdLocal() {
   try {
     const raw = localStorage.getItem("user");
     if (!raw) return "";
-
     const user = JSON.parse(raw);
     return String(user?.id || "").trim();
   } catch {
@@ -55,24 +33,65 @@ function obtenerIdClase(clase) {
   return normalizarId(clase?._id);
 }
 
-function usuarioYaInscrito(clase) {
-  if (!usuarioId.value) return false;
-  const inscritos = Array.isArray(clase?.inscritos) ? clase.inscritos : [];
-  return inscritos.some((id) => normalizarId(id) === usuarioId.value);
+function obtenerHoraLocal(valor) {
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return "-";
+
+  return fecha.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-function estaInscribiendo(idClase) {
-  return clasesInscribiendo.value.includes(idClase);
+function obtenerRutaImagen(nombreImagen) {
+  const nombre = String(nombreImagen || "").trim();
+  if (!nombre) return "";
+  return `/src/uploads/${encodeURIComponent(nombre)}`;
 }
 
-async function inscribirse(clase) {
+function estaCancelando(idClase) {
+  return clasesCancelando.value.includes(idClase);
+}
+
+async function cargarMisClases() {
+  errorMsg.value = "";
+  cargando.value = true;
+
+  if (!usuarioId.value) {
+    clases.value = [];
+    errorMsg.value = "Debes iniciar sesion para ver tus clases";
+    cargando.value = false;
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/clases/usuario/${encodeURIComponent(usuarioId.value)}`);
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || data?.ok === false) {
+      errorMsg.value = data?.error || "No se pudieron cargar tus clases";
+      clases.value = [];
+      return;
+    }
+
+    clases.value = Array.isArray(data?.clases) ? data.clases : [];
+  } catch (e) {
+    console.error("[mis-clases] Error cargando clases:", e);
+    errorMsg.value = "Error de red al cargar tus clases";
+    clases.value = [];
+  } finally {
+    cargando.value = false;
+  }
+}
+
+async function cancelarInscripcion(clase) {
   errorMsg.value = "";
   okMsg.value = "";
 
   const idClase = obtenerIdClase(clase);
 
   if (!usuarioId.value) {
-    errorMsg.value = "Debes iniciar sesion para inscribirte";
+    errorMsg.value = "Debes iniciar sesion para cancelar";
     return;
   }
 
@@ -81,14 +100,14 @@ async function inscribirse(clase) {
     return;
   }
 
-  if (usuarioYaInscrito(clase) || estaInscribiendo(idClase)) {
+  if (estaCancelando(idClase)) {
     return;
   }
 
-  clasesInscribiendo.value = [...clasesInscribiendo.value, idClase];
+  clasesCancelando.value = [...clasesCancelando.value, idClase];
 
   try {
-    const response = await fetch(`/api/clases/${encodeURIComponent(idClase)}/inscribirse`, {
+    const response = await fetch(`/api/clases/${encodeURIComponent(idClase)}/cancelar-inscripcion`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ usuarioId: usuarioId.value }),
@@ -97,70 +116,28 @@ async function inscribirse(clase) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok || data?.ok === false) {
-      errorMsg.value = data?.error || "No se pudo completar la inscripcion";
+      errorMsg.value = data?.error || "No se pudo cancelar la inscripcion";
       return;
     }
 
-    okMsg.value = data?.yaInscrito
-      ? "Ya estabas inscrito en esta clase"
-      : "Inscripcion realizada";
-    await cargarClasesHoy();
+    okMsg.value = data?.cancelada ? "Inscripcion cancelada" : "No estabas inscrito en esta clase";
+    await cargarMisClases();
   } catch (e) {
-    console.error("[inscribir-clase] Error al inscribirse:", e);
-    errorMsg.value = "Error de red al inscribirse";
+    console.error("[mis-clases] Error cancelando inscripcion:", e);
+    errorMsg.value = "Error de red al cancelar";
   } finally {
-    clasesInscribiendo.value = clasesInscribiendo.value.filter((id) => id !== idClase);
-  }
-}
-
-function obtenerRutaImagen(nombreImagen) {
-  const nombre = String(nombreImagen || "").trim();
-  if (!nombre) return "";
-
-  return `/src/uploads/${encodeURIComponent(nombre)}`;
-}
-
-const clasesHoy = computed(() => {
-  const hoy = obtenerFechaLocalSinHora(new Date());
-
-  return clases.value
-    .filter((clase) => obtenerFechaLocalSinHora(clase?.fechaHora) === hoy)
-    .slice()
-    .sort((a, b) => new Date(a.fechaHora).getTime() - new Date(b.fechaHora).getTime());
-});
-
-async function cargarClasesHoy() {
-  errorMsg.value = "";
-  cargando.value = true;
-
-  try {
-    const response = await fetch("/api/clases");
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok || data?.ok === false) {
-      errorMsg.value = data?.error || "No se pudieron cargar las clases";
-      clases.value = [];
-      return;
-    }
-
-    clases.value = Array.isArray(data?.clases) ? data.clases : [];
-  } catch (e) {
-    console.error("[inscribir-clase] Error cargando clases:", e);
-    errorMsg.value = "Error de red al cargar clases";
-    clases.value = [];
-  } finally {
-    cargando.value = false;
+    clasesCancelando.value = clasesCancelando.value.filter((id) => id !== idClase);
   }
 }
 
 onMounted(() => {
   usuarioId.value = obtenerUsuarioIdLocal();
-  cargarClasesHoy();
+  cargarMisClases();
 });
 </script>
 
 <template>
-  <div class="inscribir-page">
+  <div class="mis-clases-page">
     <nav class="navbar">
       <RouterLink to="/" class="logo-link">
         <img :src="logoEvol" alt="Evol" class="logo" />
@@ -175,16 +152,16 @@ onMounted(() => {
     </nav>
 
     <main class="contenido">
-      <h1>Clases de hoy</h1>
+      <h1>Mis clases</h1>
 
       <p v-if="okMsg" class="estado ok">{{ okMsg }}</p>
       <p v-if="cargando" class="estado">Cargando clases...</p>
       <p v-else-if="errorMsg" class="estado error">{{ errorMsg }}</p>
-      <p v-else-if="!clasesHoy.length" class="estado">Hoy no hay clases activas.</p>
+      <p v-else-if="!clases.length" class="estado">No tienes clases inscritas.</p>
 
-      <section v-if="!cargando && !errorMsg && clasesHoy.length" class="grid-clases">
+      <section v-if="!cargando && !errorMsg && clases.length" class="grid-clases">
         <article
-          v-for="clase in clasesHoy"
+          v-for="clase in clases"
           :key="clase._id || `${clase.nombre}-${clase.fechaHora}`"
           class="tarjeta-clase"
         >
@@ -199,24 +176,13 @@ onMounted(() => {
             <h2>{{ clase.nombre || "Clase" }}</h2>
             <p>{{ clase.descripcion || "Sin descripcion" }}</p>
             <p class="dato">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
-            <p class="dato">Plazas: {{ clase.plazasMaximas ?? "-" }}</p>
             <button
               type="button"
-              class="btn-inscribirse"
-              :disabled="
-                !usuarioId ||
-                usuarioYaInscrito(clase) ||
-                estaInscribiendo(obtenerIdClase(clase))
-              "
-              @click="inscribirse(clase)"
+              class="btn-cancelar"
+              :disabled="estaCancelando(obtenerIdClase(clase))"
+              @click="cancelarInscripcion(clase)"
             >
-              {{
-                usuarioYaInscrito(clase)
-                  ? "Inscrito"
-                  : estaInscribiendo(obtenerIdClase(clase))
-                  ? "Inscribiendo..."
-                  : "Inscribirse"
-              }}
+              {{ estaCancelando(obtenerIdClase(clase)) ? "Cancelando..." : "Cancelar" }}
             </button>
           </div>
         </article>
@@ -226,7 +192,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.inscribir-page {
+.mis-clases-page {
   min-height: 100vh;
   background-color: var(--oscuro);
   color: #ffffff;
@@ -335,9 +301,9 @@ h1 {
   color: #c7d2df;
 }
 
-.btn-inscribirse {
+.btn-cancelar {
   width: 100%;
-  border: 1px solid var(--verde);
+  border: 1px solid #ffffff;
   border-radius: 8px;
   padding: 10px 12px;
   background-color: transparent;
@@ -346,14 +312,16 @@ h1 {
   font-weight: 600;
 }
 
-.btn-inscribirse:hover {
-  background-color: var(--verde);
+.btn-cancelar:hover {
+  background-color: #ffffff;
+  color: var(--oscuro);
 }
 
-.btn-inscribirse:disabled {
+.btn-cancelar:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   background-color: transparent;
+  color: #ffffff;
 }
 
 @media (max-width: 800px) {

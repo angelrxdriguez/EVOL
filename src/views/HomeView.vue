@@ -12,7 +12,7 @@ import logoEvol from "../assets/evol_negativo-zoom2.png";
       <div class="links">
         <RouterLink to="/home">Inicio</RouterLink>
         <RouterLink to="/inscribir-clase">Clases</RouterLink>
-        <a href="#">Mis clases</a>
+        <RouterLink to="/mis-clases">Mis clases</RouterLink>
         <a href="#">Perfil</a>
       </div>
     </nav>
