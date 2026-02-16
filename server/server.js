@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import express from 'express'
 import cron from 'node-cron'
 import axios from 'axios'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -39,6 +39,7 @@ app.use((req, res, next) => {
 })
 
 app.use(express.json({ limit: '15mb' }))
+app.use('/uploads', express.static(path.join(__dirname, '..', 'src', 'uploads')))
 
 function limpiarNombreArchivo(nombreArchivo) {
   const base = path.basename(String(nombreArchivo || '').trim())
@@ -249,6 +250,7 @@ app.post('/clases', async (req, res) => {
       fechaHora,
       plazasMaximas,
       imagen: nombreImagenGuardada,
+      inscritos: [],
     }
 
     const result = await clasesCollection.insertOne(nuevaClase)
@@ -257,6 +259,41 @@ app.post('/clases', async (req, res) => {
       id: String(result.insertedId),
       clase: { _id: String(result.insertedId), ...nuevaClase },
     })
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message })
+  }
+})
+
+app.post('/clases/:idClase/inscribirse', async (req, res) => {
+  try {
+    if (!clasesCollection) {
+      return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
+    }
+
+    const idClaseRaw = String(req.params?.idClase || '').trim()
+    const usuarioIdRaw = String(req.body?.usuarioId || '').trim()
+
+    if (!ObjectId.isValid(idClaseRaw)) {
+      return res.status(400).json({ ok: false, error: 'idClase invalido' })
+    }
+
+    if (!ObjectId.isValid(usuarioIdRaw)) {
+      return res.status(400).json({ ok: false, error: 'usuarioId invalido' })
+    }
+
+    const idClase = new ObjectId(idClaseRaw)
+    const usuarioId = new ObjectId(usuarioIdRaw)
+
+    const result = await clasesCollection.updateOne(
+      { _id: idClase },
+      { $addToSet: { inscritos: usuarioId } }
+    )
+
+    if (!result.matchedCount) {
+      return res.status(404).json({ ok: false, error: 'Clase no encontrada' })
+    }
+
+    return res.json({ ok: true, yaInscrito: result.modifiedCount === 0 })
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message })
   }
