@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import logoEvol from "../assets/evol_negativo-zoom2.png";
 
+
 const clases = ref([]);
 const cargando = ref(false);
 const errorMsg = ref("");
@@ -30,7 +31,7 @@ function obtenerHoraLocal(valor) {
   });
 }
 
-function obtenerFechaHumana(valor) {
+function fechaEntendible(valor) {
   const fecha = new Date(valor);
   if (Number.isNaN(fecha.getTime())) return "-";
 
@@ -44,6 +45,9 @@ function obtenerFechaHumana(valor) {
   return fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
 }
 
+// -------------------------
+// Usuario / IDs
+// -------------------------
 function obtenerUsuarioIdLocal() {
   try {
     const raw = localStorage.getItem("user");
@@ -58,9 +62,11 @@ function obtenerUsuarioIdLocal() {
 
 function normalizarId(valor) {
   if (typeof valor === "string") return valor.trim();
+
   if (valor && typeof valor === "object" && typeof valor.$oid === "string") {
     return valor.$oid.trim();
   }
+
   if (valor == null) return "";
   return String(valor).trim();
 }
@@ -69,10 +75,22 @@ function obtenerIdClase(clase) {
   return normalizarId(clase?._id);
 }
 
+// -------------------------
+// Inscritos / plazas
+// -------------------------
 function usuarioYaInscrito(clase) {
   if (!usuarioId.value) return false;
+
   const inscritos = Array.isArray(clase?.inscritos) ? clase.inscritos : [];
-  return inscritos.some((id) => normalizarId(id) === usuarioId.value);
+
+  // Versión “humana”: recorremos y comparamos
+  for (const idInscrito of inscritos) {
+    if (normalizarId(idInscrito) === usuarioId.value) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function estaInscribiendo(idClase) {
@@ -91,7 +109,17 @@ function contarInscritos(clase) {
 }
 
 function obtenerPlazasRestantes(clase) {
-  return Math.max(0, obtenerPlazasMaximas(clase) - contarInscritos(clase));
+  const maximas = obtenerPlazasMaximas(clase);
+  const inscritos = contarInscritos(clase);
+  return Math.max(0, maximas - inscritos);
+}
+
+async function leerJsonSeguro(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
 }
 
 async function inscribirse(clase) {
@@ -110,53 +138,76 @@ async function inscribirse(clase) {
     return;
   }
 
-  if (usuarioYaInscrito(clase) || estaInscribiendo(idClase)) {
-    return;
-  }
+  if (usuarioYaInscrito(clase)) return;
+  if (estaInscribiendo(idClase)) return;
 
-  clasesInscribiendo.value = [...clasesInscribiendo.value, idClase];
+  clasesInscribiendo.value.push(idClase);
 
   try {
-    const response = await fetch(`/api/clases/${encodeURIComponent(idClase)}/inscribirse`, {
+    const url = `/api/clases/${encodeURIComponent(idClase)}/inscribirse`;
+
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ usuarioId: usuarioId.value }),
     });
 
-    const data = await response.json().catch(() => ({}));
+    const data = await leerJsonSeguro(response);
 
     if (!response.ok || data?.ok === false) {
       errorMsg.value = data?.error || "No se pudo completar la inscripcion";
       return;
     }
 
-    okMsg.value = data?.yaInscrito
-      ? "Ya estabas inscrito en esta clase"
-      : "Inscripcion realizada";
+    if (data?.yaInscrito) {
+      okMsg.value = "Ya estabas inscrito en esta clase";
+    } else {
+      okMsg.value = "Inscripcion realizada";
+    }
+
     await cargarClasesHoy();
   } catch (e) {
     console.error("[inscribir-clase] Error al inscribirse:", e);
     errorMsg.value = "Error de red al inscribirse";
   } finally {
-    clasesInscribiendo.value = clasesInscribiendo.value.filter((id) => id !== idClase);
+    // Quitamos el idClase de "clasesInscribiendo" SIN usar filter con callback
+    const nuevaLista = [];
+    for (const idGuardado of clasesInscribiendo.value) {
+      if (idGuardado !== idClase) nuevaLista.push(idGuardado);
+    }
+    clasesInscribiendo.value = nuevaLista;
   }
 }
 
 function obtenerRutaImagen(nombreImagen) {
   const nombre = String(nombreImagen || "").trim();
   if (!nombre) return "";
-
   return `/src/uploads/${encodeURIComponent(nombre)}`;
 }
 
-const clasesHoy = computed(() => {
-  const hoy = obtenerFechaLocalSinHora(new Date());
+function compararPorHora(a, b) {
+  const ta = new Date(a?.fechaHora).getTime();
+  const tb = new Date(b?.fechaHora).getTime();
+  return ta - tb;
+}
 
-  return clases.value
-    .filter((clase) => obtenerFechaLocalSinHora(clase?.fechaHora) === hoy)
-    .slice()
-    .sort((a, b) => new Date(a.fechaHora).getTime() - new Date(b.fechaHora).getTime());
-});
+function calcularClasesDeHoy() {
+  const hoy = obtenerFechaLocalSinHora(new Date());
+  const lista = [];
+
+  for (const clase of clases.value) {
+    const fechaClase = obtenerFechaLocalSinHora(clase?.fechaHora);
+    if (fechaClase === hoy) {
+      lista.push(clase);
+    }
+  }
+
+  lista.sort(compararPorHora);
+
+  return lista;
+}
+
+const clasesHoy = computed(calcularClasesDeHoy);
 
 async function cargarClasesHoy() {
   errorMsg.value = "";
@@ -164,7 +215,7 @@ async function cargarClasesHoy() {
 
   try {
     const response = await fetch("/api/clases");
-    const data = await response.json().catch(() => ({}));
+    const data = await leerJsonSeguro(response);
 
     if (!response.ok || data?.ok === false) {
       errorMsg.value = data?.error || "No se pudieron cargar las clases";
@@ -172,7 +223,11 @@ async function cargarClasesHoy() {
       return;
     }
 
-    clases.value = Array.isArray(data?.clases) ? data.clases : [];
+    if (Array.isArray(data?.clases)) {
+      clases.value = data.clases;
+    } else {
+      clases.value = [];
+    }
   } catch (e) {
     console.error("[inscribir-clase] Error cargando clases:", e);
     errorMsg.value = "Error de red al cargar clases";
@@ -182,10 +237,12 @@ async function cargarClasesHoy() {
   }
 }
 
-onMounted(() => {
+function alMontarComponente() {
   usuarioId.value = obtenerUsuarioIdLocal();
   cargarClasesHoy();
-});
+}
+
+onMounted(alMontarComponente);
 </script>
 
 <template>
@@ -229,7 +286,7 @@ onMounted(() => {
             <p>{{ clase.descripcion || "Sin descripcion" }}</p>
             <div class="fecha-campo">
               <span class="fecha-etiqueta">Fecha de la clase</span>
-              <p class="fecha-valor">{{ obtenerFechaHumana(clase.fechaHora) }}</p>
+              <p class="fecha-valor">{{ fechaEntendible(clase.fechaHora) }}</p>
               <p class="fecha-hora">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
             </div>
             <p class="dato">Plazas: {{ clase.plazasMaximas ?? "-" }}</p>
@@ -252,7 +309,10 @@ onMounted(() => {
                   : "Inscribirse"
               }}
             </button>
-            <p class="subtexto">Controla tu asistencia en <a href="/mis-clases" class="subenlace">Mis clases</a></p>
+            <p class="subtexto">
+              Controla tu asistencia en
+              <a href="/mis-clases" class="subenlace">Mis clases</a>
+            </p>
           </div>
         </article>
       </section>
@@ -437,16 +497,4 @@ h1 {
   cursor: not-allowed;
   background-color: transparent;
 }
-
-@media (max-width: 800px) {
-  .links {
-    margin: 12px;
-    flex-wrap: wrap;
-  }
-
-  .contenido {
-    padding-top: 12px;
-  }
-}
 </style>
-
