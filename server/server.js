@@ -306,6 +306,53 @@ app.post('/clases/:idClase/inscribirse', async (req, res) => {
   }
 })
 
+app.get('/clases/:idClase/inscritos', async (req, res) => {
+  try {
+    if (!clasesCollection || !usuariosCollection) {
+      return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
+    }
+
+    const idClaseRaw = String(req.params?.idClase || '').trim()
+    if (!ObjectId.isValid(idClaseRaw)) {
+      return res.status(400).json({ ok: false, error: 'idClase invalido' })
+    }
+
+    const clase = await clasesCollection.findOne(
+      { _id: new ObjectId(idClaseRaw) },
+      { projection: { inscritos: 1 } }
+    )
+
+    if (!clase) {
+      return res.status(404).json({ ok: false, error: 'Clase no encontrada' })
+    }
+
+    const idsInscritos = (Array.isArray(clase?.inscritos) ? clase.inscritos : [])
+      .map((id) => idAString(id))
+      .filter((id) => ObjectId.isValid(id))
+
+    if (!idsInscritos.length) {
+      return res.json({ ok: true, usuarios: [] })
+    }
+
+    const usuarios = await usuariosCollection
+      .find(
+        { _id: { $in: idsInscritos.map((id) => new ObjectId(id)) } },
+        { projection: { nombreUsuario: 1 } }
+      )
+      .toArray()
+
+    const mapaUsuarios = new Map(usuarios.map((usuario) => [idAString(usuario._id), usuario]))
+    const nombresUsuarios = idsInscritos.map((id) => {
+      const usuario = mapaUsuarios.get(id)
+      return String(usuario?.nombreUsuario || 'Usuario eliminado')
+    })
+
+    return res.json({ ok: true, usuarios: nombresUsuarios })
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message })
+  }
+})
+
 app.get('/clases/usuario/:usuarioId', async (req, res) => {
   try {
     if (!clasesCollection) {

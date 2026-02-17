@@ -18,6 +18,10 @@ const okMsg = ref("");
 const form = ref({ ...FORM_INICIAL });
 const inputImagenRef = ref(null);
 const imagenArchivo = ref(null);
+const tituloModalInscritos = ref("Inscritos");
+const usuariosInscritos = ref([]);
+const cargandoInscritos = ref(false);
+const errorInscritos = ref("");
 
 const formateadorFecha = new Intl.DateTimeFormat("es-ES", {
   dateStyle: "short",
@@ -29,6 +33,44 @@ function formatearFecha(fechaISO) {
   const fecha = new Date(fechaISO);
   if (Number.isNaN(fecha.getTime())) return "-";
   return formateadorFecha.format(fecha);
+}
+
+function obtenerIdClase(clase) {
+  const id = clase?._id;
+  if (id && typeof id === "object" && typeof id.$oid === "string") {
+    return String(id.$oid).trim();
+  }
+  return String(id || "").trim();
+}
+
+async function abrirModalInscritos(clase) {
+  tituloModalInscritos.value = clase?.nombre ? `Inscritos en ${clase.nombre}` : "Inscritos";
+  usuariosInscritos.value = [];
+  errorInscritos.value = "";
+  cargandoInscritos.value = true;
+
+  try {
+    const idClase = obtenerIdClase(clase);
+    if (!idClase) {
+      errorInscritos.value = "Clase invalida";
+      return;
+    }
+
+    const response = await fetch(`/api/clases/${encodeURIComponent(idClase)}/inscritos`);
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || data?.ok === false) {
+      errorInscritos.value = data?.error || "No se pudieron cargar los inscritos";
+      return;
+    }
+
+    usuariosInscritos.value = Array.isArray(data?.usuarios) ? data.usuarios : [];
+  } catch (e) {
+    console.error("[clases] Error cargando inscritos:", e);
+    errorInscritos.value = "Error de red al cargar inscritos";
+  } finally {
+    cargandoInscritos.value = false;
+  }
 }
 
 function limpiarMensajes() {
@@ -305,23 +347,74 @@ onMounted(cargarClases);
                 <th>Descripcion</th>
                 <th>Fecha y hora</th>
                 <th>Plazas</th>
+                <th>Accion</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="!clases.length && !cargando" class="fila-vacia">
-                <td colspan="4" class="vacio">No hay clases registradas.</td>
+                <td colspan="5" class="vacio">No hay clases registradas.</td>
               </tr>
               <tr v-for="clase in clases" :key="clase._id || `${clase.nombre}-${clase.fechaHora}`">
                 <td>{{ clase.nombre || "-" }}</td>
                 <td class="descripcion-col">{{ clase.descripcion || "-" }}</td>
                 <td>{{ formatearFecha(clase.fechaHora) }}</td>
                 <td>{{ clase.plazasMaximas ?? "-" }}</td>
+                <td class="accion-col">
+                  <button
+                    type="button"
+                    class="btn ghost btn-inscritos"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalInscritosClase"
+                    @click="abrirModalInscritos(clase)"
+                  >
+                    INSCRITOS
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
     </section>
+
+    <div
+      id="modalInscritosClase"
+      class="modal fade"
+      tabindex="-1"
+      aria-labelledby="modalInscritosClaseLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 id="modalInscritosClaseLabel" class="modal-title">{{ tituloModalInscritos }}</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p v-if="cargandoInscritos">Cargando inscritos...</p>
+            <p v-else-if="errorInscritos" class="modal-error">{{ errorInscritos }}</p>
+            <ul v-else-if="usuariosInscritos.length" class="list-group">
+              <li
+                v-for="(nombreUsuario, index) in usuariosInscritos"
+                :key="`${nombreUsuario}-${index}`"
+                class="list-group-item"
+              >
+                {{ nombreUsuario }}
+              </li>
+            </ul>
+            <p v-else>No hay inscritos en esta clase.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn ghost" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -560,6 +653,35 @@ tbody td:last-child {
 
 .descripcion-col {
   max-width: 420px;
+}
+
+.accion-col {
+  white-space: nowrap;
+}
+
+.btn-inscritos {
+  width: 100%;
+}
+
+.modal-content {
+  background: #0f1724;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.modal-title {
+  color: var(--verde);
+}
+
+.modal-error {
+  margin: 0;
+  color: #ffb4b4;
+}
+
+.list-group-item {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 
 .fila-vacia td {

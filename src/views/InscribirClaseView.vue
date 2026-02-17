@@ -65,6 +65,13 @@ function estaInscribiendo(idClase) {
   return clasesInscribiendo.value.includes(idClase);
 }
 
+function obtenerPlazasDisponibles(clase) {
+  const plazasMaximas = Number(clase?.plazasMaximas);
+  const inscritos = Array.isArray(clase?.inscritos) ? clase.inscritos.length : 0;
+  if (!Number.isFinite(plazasMaximas) || plazasMaximas <= 0) return 0;
+  return Math.max(0, plazasMaximas - inscritos);
+}
+
 async function inscribirse(clase) {
   errorMsg.value = "";
   okMsg.value = "";
@@ -200,6 +207,7 @@ onMounted(() => {
             <p>{{ clase.descripcion || "Sin descripcion" }}</p>
             <p class="dato">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
             <p class="dato">Plazas: {{ clase.plazasMaximas ?? "-" }}</p>
+            <p class="plazas-disponibles">{{ obtenerPlazasDisponibles(clase) }} PLAZAS</p>
             <button
               type="button"
               class="btn-inscribirse"
@@ -333,6 +341,16 @@ h1 {
 .dato {
   font-size: 0.9rem;
   color: #c7d2df;
+}
+
+.plazas-disponibles {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--verde);
+  background-color: #172338;
+  font-weight: 700;
+  text-align: center;
 }
 
 .btn-inscribirse {
