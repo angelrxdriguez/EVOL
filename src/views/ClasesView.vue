@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
 
-const FORM_INICIAL = {
+const FORMULARIO_INICIAL = {
   nombre: "",
   descripcion: "",
   fecha: "",
@@ -10,36 +10,40 @@ const FORM_INICIAL = {
   imagen: "",
 };
 
-const clases = ref([]);
-const cargando = ref(false);
-const guardando = ref(false);
-const errorMsg = ref("");
-const okMsg = ref("");
-const form = ref({ ...FORM_INICIAL });
-const inputImagenRef = ref(null);
-const imagenArchivo = ref(null);
-const tituloModalInscritos = ref("Inscritos");
-const usuariosInscritos = ref([]);
+const listaClases = ref([]);
+const cargandoClases = ref(false);
+const guardandoClase = ref(false);
+const mensajeError = ref("");
+const mensajeOk = ref("");
+const formulario = ref({ ...FORMULARIO_INICIAL });
+const inputImagen = ref(null);
+const archivoImagen = ref(null);
+const tituloModal = ref("Inscritos");
+const listaInscritos = ref([]);
 const cargandoInscritos = ref(false);
-const errorInscritos = ref("");
+const mensajeErrorInscritos = ref("");
 
 const formateadorFecha = new Intl.DateTimeFormat("es-ES", {
   dateStyle: "short",
   timeStyle: "short",
 });
 
-function formatearFecha(fechaISO) {
-  if (!fechaISO) return "-";
-  const fecha = new Date(fechaISO);
+function formatearFecha(fechaIso) {
+  if (!fechaIso) return "-";
+
+  const fecha = new Date(fechaIso);
   if (Number.isNaN(fecha.getTime())) return "-";
+
   return formateadorFecha.format(fecha);
 }
 
 function obtenerIdClase(clase) {
   const id = clase?._id;
+
   if (id && typeof id === "object" && typeof id.$oid === "string") {
     return String(id.$oid).trim();
   }
+
   return String(id || "").trim();
 }
 
@@ -55,86 +59,66 @@ function contarInscritos(clase) {
 }
 
 function obtenerPlazasRestantes(clase) {
-  return Math.max(0, obtenerPlazasMaximas(clase) - contarInscritos(clase));
+  const maximas = obtenerPlazasMaximas(clase);
+  const inscritos = contarInscritos(clase);
+  return Math.max(0, maximas - inscritos);
 }
 
-async function abrirModalInscritos(clase) {
-  tituloModalInscritos.value = clase?.nombre ? `Inscritos en ${clase.nombre}` : "Inscritos";
-  usuariosInscritos.value = [];
-  errorInscritos.value = "";
-  cargandoInscritos.value = true;
-
+async function leerJsonSeguro(response) {
   try {
-    const idClase = obtenerIdClase(clase);
-    if (!idClase) {
-      errorInscritos.value = "Clase invalida";
-      return;
-    }
-
-    const response = await fetch(`/api/clases/${encodeURIComponent(idClase)}/inscritos`);
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok || data?.ok === false) {
-      errorInscritos.value = data?.error || "No se pudieron cargar los inscritos";
-      return;
-    }
-
-    usuariosInscritos.value = Array.isArray(data?.usuarios) ? data.usuarios : [];
-  } catch (e) {
-    console.error("[clases] Error cargando inscritos:", e);
-    errorInscritos.value = "Error de red al cargar inscritos";
-  } finally {
-    cargandoInscritos.value = false;
+    return await response.json();
+  } catch {
+    return {};
   }
 }
 
 function limpiarMensajes() {
-  errorMsg.value = "";
-  okMsg.value = "";
+  mensajeError.value = "";
+  mensajeOk.value = "";
 }
 
 function reiniciarFormulario() {
-  form.value = { ...FORM_INICIAL };
-  imagenArchivo.value = null;
-  if (inputImagenRef.value) {
-    inputImagenRef.value.value = "";
+  formulario.value = { ...FORMULARIO_INICIAL };
+  archivoImagen.value = null;
+
+  if (inputImagen.value) {
+    inputImagen.value.value = "";
   }
 }
 
-async function construirPayloadClase(fechaHoraISO) {
-  const imagenContenido = await archivoABase64(imagenArchivo.value);
-  return {
-    nombre: String(form.value.nombre || "").trim(),
-    descripcion: String(form.value.descripcion || "").trim(),
-    fechaHora: fechaHoraISO,
-    plazasMaximas: Number(form.value.plazasMaximas),
-    imagen: String(form.value.imagen || "").trim(),
-    imagenContenido,
-  };
+function manejarCambioImagen(evento) {
+  const archivo = evento?.target?.files?.[0];
+  archivoImagen.value = archivo || null;
+  formulario.value.imagen = archivo?.name ? String(archivo.name).trim() : "";
 }
 
-function manejarSeleccionImagen(event) {
-  const archivo = event?.target?.files?.[0];
-  imagenArchivo.value = archivo || null;
-  form.value.imagen = archivo?.name ? String(archivo.name).trim() : "";
-}
-
-function archivoABase64(archivo) {
+function convertirArchivoABase64(archivo) {
   if (!archivo) return Promise.resolve("");
 
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const resultado = String(reader.result || "");
-      const coma = resultado.indexOf(",");
-      resolve(coma >= 0 ? resultado.slice(coma + 1) : resultado);
+  return new Promise(function (resolve, reject) {
+    const lector = new FileReader();
+
+    lector.onload = function () {
+      const contenido = String(lector.result || "");
+      const posicionComa = contenido.indexOf(",");
+
+      if (posicionComa >= 0) {
+        resolve(contenido.slice(posicionComa + 1));
+        return;
+      }
+
+      resolve(contenido);
     };
-    reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
-    reader.readAsDataURL(archivo);
+
+    lector.onerror = function () {
+      reject(new Error("No se pudo leer la imagen"));
+    };
+
+    lector.readAsDataURL(archivo);
   });
 }
 
-function construirFechaHoraISO(fecha, hora) {
+function crearFechaHoraIso(fecha, hora) {
   if (!fecha || !hora) return "";
 
   const fechaHora = new Date(`${fecha}T${hora}`);
@@ -144,72 +128,105 @@ function construirFechaHoraISO(fecha, hora) {
 }
 
 function validarFormulario() {
-  const nombre = String(form.value.nombre || "").trim();
-  const descripcion = String(form.value.descripcion || "").trim();
-  const fecha = String(form.value.fecha || "").trim();
-  const hora = String(form.value.hora || "").trim();
-  const plazas = Number(form.value.plazasMaximas);
-  const imagen = String(form.value.imagen || "").trim();
-  const maxTamanoImagen = 5 * 1024 * 1024;
+  const nombre = String(formulario.value.nombre || "").trim();
+  const descripcion = String(formulario.value.descripcion || "").trim();
+  const fecha = String(formulario.value.fecha || "").trim();
+  const hora = String(formulario.value.hora || "").trim();
+  const plazas = Number(formulario.value.plazasMaximas);
+  const imagen = String(formulario.value.imagen || "").trim();
+  const tamanoMaximoImagen = 5 * 1024 * 1024;
 
-  if (!nombre) {
-    return "El nombre es obligatorio";
-  }
-
-  if (!descripcion) {
-    return "La descripcion es obligatoria";
-  }
-
-  if (!fecha) {
-    return "La fecha es obligatoria";
-  }
-
-  if (!hora) {
-    return "La hora es obligatoria";
-  }
+  if (!nombre) return "El nombre es obligatorio";
+  if (!descripcion) return "La descripcion es obligatoria";
+  if (!fecha) return "La fecha es obligatoria";
+  if (!hora) return "La hora es obligatoria";
 
   if (!Number.isInteger(plazas) || plazas <= 0) {
     return "Plazas maximas debe ser un entero mayor que 0";
   }
 
-  if (!imagen) {
-    return "La imagen es obligatoria";
-  }
+  if (!imagen) return "La imagen es obligatoria";
+  if (!archivoImagen.value) return "Debes seleccionar un archivo de imagen";
+  if (archivoImagen.value.size > tamanoMaximoImagen) return "La imagen no puede superar 5MB";
 
-  if (!imagenArchivo.value) {
-    return "Debes seleccionar un archivo de imagen";
-  }
-
-  if (imagenArchivo.value.size > maxTamanoImagen) {
-    return "La imagen no puede superar 5MB";
-  }
-
-  if (!construirFechaHoraISO(fecha, hora)) {
-    return "La fecha y hora no es valida";
-  }
+  const fechaHoraIso = crearFechaHoraIso(fecha, hora);
+  if (!fechaHoraIso) return "La fecha y hora no es valida";
 
   return "";
 }
 
-async function cargarClases() {
-  limpiarMensajes();
-  cargando.value = true;
+async function construirDatosClase(fechaHoraIso) {
+  const imagenContenido = await convertirArchivoABase64(archivoImagen.value);
+
+  return {
+    nombre: String(formulario.value.nombre || "").trim(),
+    descripcion: String(formulario.value.descripcion || "").trim(),
+    fechaHora: fechaHoraIso,
+    plazasMaximas: Number(formulario.value.plazasMaximas),
+    imagen: String(formulario.value.imagen || "").trim(),
+    imagenContenido,
+  };
+}
+
+async function abrirModalInscritos(clase) {
+  tituloModal.value = clase?.nombre ? `Inscritos en ${clase.nombre}` : "Inscritos";
+  listaInscritos.value = [];
+  mensajeErrorInscritos.value = "";
+  cargandoInscritos.value = true;
 
   try {
-    const response = await fetch("/api/clases");
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok || data?.ok === false) {
-      errorMsg.value = data?.error || "No se pudieron cargar las clases";
+    const idClase = obtenerIdClase(clase);
+    if (!idClase) {
+      mensajeErrorInscritos.value = "Clase invalida";
       return;
     }
 
-    clases.value = Array.isArray(data?.clases) ? data.clases : [];
-  } catch (e) {
-    console.error("[clases] Error cargando clases:", e);
-    errorMsg.value = "Error de red al cargar clases";
+    const response = await fetch(`/api/clases/${encodeURIComponent(idClase)}/inscritos`);
+    const data = await leerJsonSeguro(response);
+
+    if (!response.ok || data?.ok === false) {
+      mensajeErrorInscritos.value = data?.error || "No se pudieron cargar los inscritos";
+      return;
+    }
+
+    if (Array.isArray(data?.usuarios)) {
+      listaInscritos.value = data.usuarios;
+    } else {
+      listaInscritos.value = [];
+    }
+  } catch (error) {
+    console.error("[clases] Error cargando inscritos:", error);
+    mensajeErrorInscritos.value = "Error de red al cargar inscritos";
   } finally {
-    cargando.value = false;
+    cargandoInscritos.value = false;
+  }
+}
+
+async function cargarClases() {
+  limpiarMensajes();
+  cargandoClases.value = true;
+
+  try {
+    const response = await fetch("/api/clases");
+    const data = await leerJsonSeguro(response);
+
+    if (!response.ok || data?.ok === false) {
+      mensajeError.value = data?.error || "No se pudieron cargar las clases";
+      listaClases.value = [];
+      return;
+    }
+
+    if (Array.isArray(data?.clases)) {
+      listaClases.value = data.clases;
+    } else {
+      listaClases.value = [];
+    }
+  } catch (error) {
+    console.error("[clases] Error cargando clases:", error);
+    mensajeError.value = "Error de red al cargar clases";
+    listaClases.value = [];
+  } finally {
+    cargandoClases.value = false;
   }
 }
 
@@ -218,46 +235,46 @@ async function crearClase() {
 
   const errorValidacion = validarFormulario();
   if (errorValidacion) {
-    errorMsg.value = errorValidacion;
+    mensajeError.value = errorValidacion;
     return;
   }
 
-  guardando.value = true;
+  guardandoClase.value = true;
 
   try {
-    const fechaHoraISO = construirFechaHoraISO(form.value.fecha, form.value.hora);
-    if (!fechaHoraISO) {
-      errorMsg.value = "La fecha y hora no es valida";
+    const fechaHoraIso = crearFechaHoraIso(formulario.value.fecha, formulario.value.hora);
+    if (!fechaHoraIso) {
+      mensajeError.value = "La fecha y hora no es valida";
       return;
     }
 
-    const payload = await construirPayloadClase(fechaHoraISO);
-    if (!payload.imagenContenido) {
-      errorMsg.value = "No se pudo leer la imagen";
+    const datosClase = await construirDatosClase(fechaHoraIso);
+    if (!datosClase.imagenContenido) {
+      mensajeError.value = "No se pudo leer la imagen";
       return;
     }
 
     const response = await fetch("/api/clases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(datosClase),
     });
 
-    const data = await response.json().catch(() => ({}));
+    const data = await leerJsonSeguro(response);
 
     if (!response.ok || data?.ok === false) {
-      errorMsg.value = data?.error || "No se pudo crear la clase";
+      mensajeError.value = data?.error || "No se pudo crear la clase";
       return;
     }
 
-    okMsg.value = "Clase creada correctamente";
+    mensajeOk.value = "Clase creada correctamente";
     reiniciarFormulario();
     await cargarClases();
-  } catch (e) {
-    console.error("[clases] Error creando clase:", e);
-    errorMsg.value = "Error al crear clase";
+  } catch (error) {
+    console.error("[clases] Error creando clase:", error);
+    mensajeError.value = "Error al crear clase";
   } finally {
-    guardando.value = false;
+    guardandoClase.value = false;
   }
 }
 
@@ -265,26 +282,26 @@ onMounted(cargarClases);
 </script>
 
 <template>
-  <main class="clases-page">
-    <header class="topbar">
-      <div class="headline">
-        <p class="eyebrow">AREA ADMIN</p>
+  <main class="pagina-clases">
+    <header class="cabecera-clases">
+      <div class="bloque-titulo">
+        <p class="texto-admin">AREA ADMIN</p>
         <h1>Gestion de clases</h1>
-        <p class="subtitle">Visualiza y crea clases de forma rapida.</p>
+        <p class="subtitulo">Visualiza y crea clases de forma rapida.</p>
       </div>
     </header>
 
-    <section class="content-grid">
-      <section class="form-panel">
-        <div class="panel-header">
+    <section class="rejilla-principal">
+      <section class="panel-formulario">
+        <div class="encabezado-panel">
           <h2>Nueva clase</h2>
         </div>
 
-        <form class="form-grid" @submit.prevent="crearClase">
-          <label>
+        <form class="rejilla-formulario" @submit.prevent="crearClase">
+          <label class="campo-formulario">
             Nombre
             <input
-              v-model="form.nombre"
+              v-model="formulario.nombre"
               type="text"
               placeholder="Ej: Spinning - Nivel Medio"
               maxlength="120"
@@ -292,38 +309,44 @@ onMounted(cargarClases);
             />
           </label>
 
-          <label>
+          <label class="campo-formulario">
             Fecha
-            <input v-model="form.fecha" type="date" required />
+            <input v-model="formulario.fecha" type="date" required />
           </label>
 
-          <label>
+          <label class="campo-formulario">
             Hora
-            <input v-model="form.hora" type="time" required />
+            <input v-model="formulario.hora" type="time" required />
           </label>
 
-          <label>
+          <label class="campo-formulario">
             Plazas maximas
-            <input v-model.number="form.plazasMaximas" type="number" min="1" step="1" required />
+            <input
+              v-model.number="formulario.plazasMaximas"
+              type="number"
+              min="1"
+              step="1"
+              required
+            />
           </label>
 
-          <label class="full">
+          <label class="campo-formulario campo-completo">
             Imagen
             <input
-              ref="inputImagenRef"
+              ref="inputImagen"
               type="file"
               accept="image/*"
               required
-              @change="manejarSeleccionImagen"
+              @change="manejarCambioImagen"
             />
-            <small class="input-help">Archivo seleccionado: {{ form.imagen || "-" }}</small>
-            <small class="input-help">La imagen se copia automaticamente a src/uploads.</small>
+            <small class="texto-ayuda">Archivo seleccionado: {{ formulario.imagen || "-" }}</small>
+            <small class="texto-ayuda">La imagen se copia automaticamente a src/uploads.</small>
           </label>
 
-          <label class="full">
+          <label class="campo-formulario campo-completo">
             Descripcion
             <textarea
-              v-model="form.descripcion"
+              v-model="formulario.descripcion"
               rows="4"
               maxlength="500"
               placeholder="Descripcion de la clase"
@@ -331,30 +354,35 @@ onMounted(cargarClases);
             />
           </label>
 
-          <div class="full form-actions">
-            <button class="btn primary" type="submit" :disabled="guardando">
-              {{ guardando ? "Guardando..." : "Crear clase" }}
+          <div class="campo-completo acciones-formulario">
+            <button class="boton boton-principal" type="submit" :disabled="guardandoClase">
+              {{ guardandoClase ? "Guardando..." : "Crear clase" }}
             </button>
           </div>
         </form>
 
-        <p v-if="errorMsg" class="msg error">{{ errorMsg }}</p>
-        <p v-if="okMsg" class="msg ok">{{ okMsg }}</p>
+        <p v-if="mensajeError" class="mensaje mensaje-error">{{ mensajeError }}</p>
+        <p v-if="mensajeOk" class="mensaje mensaje-ok">{{ mensajeOk }}</p>
       </section>
 
-      <section class="table-panel">
-        <div class="panel-header list-header">
+      <section class="panel-tabla">
+        <div class="encabezado-panel encabezado-listado">
           <div>
             <h2>Listado de clases</h2>
             <p>Clases activas e historicas en la coleccion.</p>
           </div>
 
-          <button type="button" class="btn ghost" @click="cargarClases" :disabled="cargando">
-            {{ cargando ? "Cargando..." : "Recargar" }}
+          <button
+            type="button"
+            class="boton boton-secundario"
+            @click="cargarClases"
+            :disabled="cargandoClases"
+          >
+            {{ cargandoClases ? "Cargando..." : "Recargar" }}
           </button>
         </div>
 
-        <div class="tabla-wrap">
+        <div class="contenedor-tabla">
           <table>
             <thead>
               <tr>
@@ -367,24 +395,28 @@ onMounted(cargarClases);
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!clases.length && !cargando" class="fila-vacia">
-                <td colspan="6" class="vacio">No hay clases registradas.</td>
+              <tr v-if="!listaClases.length && !cargandoClases" class="fila-vacia">
+                <td colspan="6" class="texto-vacio">No hay clases registradas.</td>
               </tr>
-              <tr v-for="clase in clases" :key="clase._id || `${clase.nombre}-${clase.fechaHora}`">
+
+              <tr
+                v-for="clase in listaClases"
+                :key="clase._id || `${clase.nombre}-${clase.fechaHora}`"
+              >
                 <td>{{ clase.nombre || "-" }}</td>
-                <td class="descripcion-col">{{ clase.descripcion || "-" }}</td>
+                <td class="columna-descripcion">{{ clase.descripcion || "-" }}</td>
                 <td>{{ formatearFecha(clase.fechaHora) }}</td>
                 <td>{{ clase.plazasMaximas ?? "-" }}</td>
                 <td>{{ obtenerPlazasRestantes(clase) }}</td>
-                <td class="accion-col">
+                <td class="columna-accion">
                   <button
                     type="button"
-                    class="btn ghost btn-inscritos"
+                    class="boton boton-secundario boton-inscritos"
                     data-bs-toggle="modal"
                     data-bs-target="#modalInscritosClase"
                     @click="abrirModalInscritos(clase)"
                   >
-                   VER INSCRITOS
+                    VER INSCRITOS
                   </button>
                 </td>
               </tr>
@@ -404,16 +436,21 @@ onMounted(cargarClases);
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 id="modalInscritosClaseLabel" class="modal-title">{{ tituloModalInscritos }}</h5>
-            <button type="button"class="btn-close btn-close-white"data-bs-dismiss="modal"aria-label="Cerrar"></button>
+            <h5 id="modalInscritosClaseLabel" class="modal-title">{{ tituloModal }}</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            />
           </div>
           <div class="modal-body">
             <p v-if="cargandoInscritos">Cargando inscritos...</p>
-            <p v-else-if="errorInscritos" class="modal-error">{{ errorInscritos }}</p>
-            <ul v-else-if="usuariosInscritos.length" class="list-group">
+            <p v-else-if="mensajeErrorInscritos" class="mensaje-error-modal">{{ mensajeErrorInscritos }}</p>
+            <ul v-else-if="listaInscritos.length" class="list-group">
               <li
-                v-for="(nombreUsuario, index) in usuariosInscritos"
-                :key="`${nombreUsuario}-${index}`"
+                v-for="(nombreUsuario, indice) in listaInscritos"
+                :key="`${nombreUsuario}-${indice}`"
                 class="list-group-item"
               >
                 {{ nombreUsuario }}
@@ -422,7 +459,9 @@ onMounted(cargarClases);
             <p v-else>No hay inscritos en esta clase.</p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn ghost" data-bs-dismiss="modal">Cerrar</button>
+            <button type="button" class="boton boton-secundario" data-bs-dismiss="modal">
+              Cerrar
+            </button>
           </div>
         </div>
       </div>
@@ -431,7 +470,7 @@ onMounted(cargarClases);
 </template>
 
 <style scoped>
-.clases-page {
+.pagina-clases {
   min-height: 100vh;
   padding: clamp(20px, 4vw, 46px);
   font-family: var(--font-family);
@@ -439,16 +478,16 @@ onMounted(cargarClases);
   background-color: var(--oscuro);
 }
 
-.topbar {
+.cabecera-clases {
   width: min(1400px, 100%);
-  margin:24px;
+  margin: 24px;
 }
 
-.headline {
+.bloque-titulo {
   margin-bottom: 16px;
 }
 
-.eyebrow {
+.texto-admin {
   margin: 0 0 8px;
   color: var(--verde);
   font-size: 0.78rem;
@@ -460,12 +499,12 @@ h1 {
   color: var(--verde);
 }
 
-.subtitle {
+.subtitulo {
   margin: 0;
   color: #cbd5e1;
 }
 
-.content-grid {
+.rejilla-principal {
   width: min(1400px, 100%);
   margin: 0 auto;
   display: grid;
@@ -473,52 +512,51 @@ h1 {
   gap: 24px;
 }
 
-.form-panel,
-.table-panel {
+.panel-formulario,
+.panel-tabla {
   background: rgba(12, 20, 32, 0.82);
   border-radius: 16px;
-  box-shadow: none;
 }
 
-.form-panel {
+.panel-formulario {
   padding: 18px;
   align-self: start;
 }
 
-.table-panel {
+.panel-tabla {
   padding: 18px 18px 12px;
 }
 
-.panel-header {
+.encabezado-panel {
   margin-bottom: 14px;
 }
 
-.panel-header h2 {
+.encabezado-panel h2 {
   margin: 0 0 4px;
   color: var(--verde);
   font-size: 1.08rem;
 }
 
-.panel-header p {
+.encabezado-panel p {
   margin: 0;
   color: #9eabbd;
   font-size: 0.9rem;
 }
 
-.list-header {
+.encabezado-listado {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
   align-items: center;
+  gap: 12px;
 }
 
-.form-grid {
+.rejilla-formulario {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-label {
+.campo-formulario {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -526,8 +564,8 @@ label {
   color: #c4cedb;
 }
 
-input,
-textarea {
+.campo-formulario input,
+.campo-formulario textarea {
   width: 100%;
   border: 1px solid rgba(127, 180, 151, 0.28);
   border-radius: 8px;
@@ -537,25 +575,21 @@ textarea {
   font-family: inherit;
 }
 
-
-textarea {
-}
-
-.input-help {
+.texto-ayuda {
   color: #93a4ba;
   font-size: 0.8rem;
 }
 
-.full {
+.campo-completo {
   grid-column: 1 / -1;
 }
 
-.form-actions {
+.acciones-formulario {
   display: flex;
   justify-content: flex-end;
 }
 
-.btn {
+.boton {
   border: 1px solid #ffffff;
   border-radius: 6px;
   padding: 9px 14px;
@@ -565,46 +599,39 @@ textarea {
   font-weight: 600;
 }
 
-.btn:hover,
-.btn:focus-visible {
+.boton:hover,
+.boton:focus-visible {
   border-color: var(--verde);
 }
 
-.btn:disabled {
+.boton:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
 
-.btn.primary {
-  background-color: transparent;
-  color: #ffffff;
-  border-color: #ffffff;
+.boton-principal {
   font-weight: 700;
 }
 
-.btn.primary:hover{
+.boton-principal:hover {
   background-color: var(--verde);
   color: var(--oscuro);
 }
 
-.btn.ghost {
-  color: #ffffff;
-}
-
-.msg {
+.mensaje {
   margin: 12px 0 0;
   font-size: 0.95rem;
 }
 
-.msg.error {
+.mensaje-error {
   color: #ffb4b4;
 }
 
-.msg.ok {
+.mensaje-ok {
   color: var(--verde);
 }
 
-.tabla-wrap {
+.contenedor-tabla {
   width: 100%;
   overflow-x: auto;
 }
@@ -649,15 +676,15 @@ tbody td:last-child {
   border-radius: 0 10px 10px 0;
 }
 
-.descripcion-col {
+.columna-descripcion {
   max-width: 420px;
 }
 
-.accion-col {
+.columna-accion {
   white-space: nowrap;
 }
 
-.btn-inscritos {
+.boton-inscritos {
   width: 100%;
 }
 
@@ -671,7 +698,7 @@ tbody td:last-child {
   color: var(--verde);
 }
 
-.modal-error {
+.mensaje-error-modal {
   margin: 0;
   color: #ffb4b4;
 }
@@ -686,7 +713,7 @@ tbody td:last-child {
   border-radius: 10px;
 }
 
-.vacio {
+.texto-vacio {
   text-align: center;
   color: #93a4ba;
 }

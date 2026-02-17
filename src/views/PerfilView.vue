@@ -5,32 +5,36 @@ import logoEvolPositivo from "../assets/evol_positivo.png";
 
 const router = useRouter();
 
+function crearDatosInvitado() {
+  return {
+    nombreUsuario: "Invitado",
+    nombreCompleto: "Invitado",
+  };
+}
+
 function leerDatosUsuario() {
   try {
-    const rawUser = localStorage.getItem("user");
-    if (!rawUser) {
-      return {
-        nombreUsuario: "Invitado",
-        nombreCompleto: "Invitado",
-      };
+    const textoUsuario = localStorage.getItem("user");
+    if (!textoUsuario) {
+      return crearDatosInvitado();
     }
 
-    const user = JSON.parse(rawUser);
-    const nombreUsuario = user?.nombreUsuario || user?.usuario || "Invitado";
-    const nombre = String(user?.nombre || "").trim();
-    const apellidos = String(user?.apellidos || "").trim();
+    const usuario = JSON.parse(textoUsuario);
+    const nombreUsuario = String(usuario?.nombreUsuario || usuario?.usuario || "Invitado").trim();
+    const nombre = String(usuario?.nombre || "").trim();
+    const apellidos = String(usuario?.apellidos || "").trim();
     const nombreCompleto = `${nombre} ${apellidos}`.trim() || nombreUsuario;
 
-    return { nombreUsuario, nombreCompleto };
-  } catch {
     return {
-      nombreUsuario: "Invitado",
-      nombreCompleto: "Invitado",
+      nombreUsuario,
+      nombreCompleto,
     };
+  } catch {
+    return crearDatosInvitado();
   }
 }
 
-const { nombreUsuario, nombreCompleto } = leerDatosUsuario();
+const datosUsuario = leerDatosUsuario();
 
 function cerrarSesion() {
   localStorage.removeItem("user");
@@ -39,30 +43,32 @@ function cerrarSesion() {
 </script>
 
 <template>
-  <div class="perfil-page">
-    <nav class="navbar">
-      <RouterLink to="/" class="logo-link">
+  <div class="pagina-perfil">
+    <nav class="barra-navegacion">
+      <RouterLink to="/" class="enlace-logo">
         <img :src="logoEvol" alt="Evol" class="logo" />
       </RouterLink>
 
-      <div class="links">
+      <div class="grupo-enlaces">
         <RouterLink to="/home">Inicio</RouterLink>
         <RouterLink to="/inscribir-clase">Clases</RouterLink>
         <RouterLink to="/mis-clases">Mis clases</RouterLink>
-        <RouterLink to="/perfil" class="active">Perfil</RouterLink>
+        <RouterLink to="/perfil" class="enlace-activo">Perfil</RouterLink>
       </div>
     </nav>
 
-    <main class="contenido">
-      <section class="perfil-card">
+    <main class="contenido-principal">
+      <section class="tarjeta-perfil">
         <h1>Mi perfil</h1>
-        <img :src="logoEvolPositivo" alt="Evol" class="perfil-logo" />
-        <p class="label">Nombre de usuario:</p>
-        <p class="nombre">{{ nombreUsuario }}</p>
-        <p class="label">Nombre completo:</p>
-        <p class="nombre">{{ nombreCompleto }}</p>
+        <img :src="logoEvolPositivo" alt="Evol" class="logo-perfil" />
 
-        <button type="button" class="logout-btn" @click="cerrarSesion">
+        <p class="etiqueta">Nombre de usuario:</p>
+        <p class="valor-nombre">{{ datosUsuario.nombreUsuario }}</p>
+
+        <p class="etiqueta">Nombre completo:</p>
+        <p class="valor-nombre">{{ datosUsuario.nombreCompleto }}</p>
+
+        <button type="button" class="boton-cerrar-sesion" @click="cerrarSesion">
           Cerrar sesion
         </button>
       </section>
@@ -71,14 +77,14 @@ function cerrarSesion() {
 </template>
 
 <style scoped>
-.perfil-page {
+.pagina-perfil {
   min-height: 100vh;
   background-color: var(--oscuro);
   color: #ffffff;
   font-family: var(--font-family);
 }
 
-.navbar {
+.barra-navegacion {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -91,12 +97,12 @@ function cerrarSesion() {
   height: auto;
 }
 
-.logo-link {
+.enlace-logo {
   display: flex;
   align-items: center;
 }
 
-.links {
+.grupo-enlaces {
   display: flex;
   margin: 20px;
 }
@@ -108,23 +114,25 @@ a {
   border-bottom: solid 2px var(--oscuro);
   padding-bottom: 4px;
 }
-.active{
-    color: var(--verde);
+
+.enlace-activo {
+  color: var(--verde);
 }
+
 a:hover {
   border-bottom: solid 2px var(--verde);
   transition: 0.3s;
 }
 
-.contenido {
-margin-top: 5rem;
+.contenido-principal {
+  margin-top: 5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
 
-.perfil-card {
+.tarjeta-perfil {
   width: 100%;
   max-width: 525px;
   background: #ffffff;
@@ -134,7 +142,7 @@ margin-top: 5rem;
   box-shadow: 0 8px 20px rgba(11, 15, 26, 0.08);
 }
 
-.perfil-logo {
+.logo-perfil {
   width: 200px;
   border-radius: 20px;
   height: auto;
@@ -145,23 +153,23 @@ margin-top: 5rem;
 h1 {
   margin: 0 0 16px;
   font-size: 24px;
-    color: black;
+  color: #000000;
 }
 
-.label {
+.etiqueta {
   margin: 0;
   font-size: 13px;
   color: #6b7280;
 }
 
-.nombre {
+.valor-nombre {
   margin: 6px 0 20px;
   font-size: 20px;
   font-weight: 700;
-  color: black;
+  color: #000000;
 }
 
-.logout-btn {
+.boton-cerrar-sesion {
   width: 100%;
   border: none;
   border-radius: 8px;
@@ -174,7 +182,7 @@ h1 {
   transition: opacity 0.2s ease;
 }
 
-.logout-btn:hover {
+.boton-cerrar-sesion:hover {
   background-color: #62aa7b;
 }
 </style>

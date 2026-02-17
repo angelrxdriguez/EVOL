@@ -3,43 +3,65 @@ import { ref } from "vue";
 import { useRouter } from "../router";
 import logoEvol from "../assets/evol_positivo.png";
 
-const nombreUsuario = ref("");
-const contrasena = ref("");
-const errorMsg = ref("");
+const usuarioEscrito = ref("");
+const contrasenaEscrita = ref("");
+const mensajeError = ref("");
 const router = useRouter();
 
-async function entrar() {
-  errorMsg.value = "";
+function limpiarMensajeError() {
+  mensajeError.value = "";
+}
+
+async function leerJsonSeguroDesdeTexto(response) {
+  const texto = await response.text();
+  if (!texto) return {};
 
   try {
-    const resp = await fetch("/api/login", {
+    return JSON.parse(texto);
+  } catch {
+    return {};
+  }
+}
+
+function guardarUsuarioLocal(usuario) {
+  localStorage.setItem("user", JSON.stringify(usuario));
+}
+
+function esUsuarioAdmin(usuario) {
+  return Number(usuario?.es_admin) === 1;
+}
+
+async function entrar() {
+  limpiarMensajeError();
+
+  try {
+    const response = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombreUsuario: nombreUsuario.value.trim(),
-        contrasena: contrasena.value,
+        nombreUsuario: String(usuarioEscrito.value || "").trim(),
+        contrasena: contrasenaEscrita.value,
       }),
     });
 
-    const raw = await resp.text();
-    let data = {};
-    try {
-      data = raw ? JSON.parse(raw) : {};
-    } catch {
-      data = {};
-    }
+    const data = await leerJsonSeguroDesdeTexto(response);
 
-    if (!resp.ok || !data.ok) {
-      errorMsg.value = data.error || `No se pudo iniciar sesion (HTTP ${resp.status})`;
+    if (!response.ok || !data?.ok) {
+      mensajeError.value = data?.error || `No se pudo iniciar sesion (HTTP ${response.status})`;
       return;
     }
 
-    localStorage.setItem("user", JSON.stringify(data.user));
-    const esAdmin = Number(data?.user?.es_admin) === 1;
-    router.push({ name: esAdmin ? "clases" : "home" });
-  } catch (e) {
-    console.error("[login] Error al iniciar sesion:", e);
-    errorMsg.value = "Error de red al iniciar sesion";
+    guardarUsuarioLocal(data.user);
+
+    if (esUsuarioAdmin(data.user)) {
+      router.push({ name: "clases" });
+      return;
+    }
+
+    router.push({ name: "home" });
+  } catch (error) {
+    console.error("[login] Error al iniciar sesion:", error);
+    mensajeError.value = "Error de red al iniciar sesion";
   }
 }
 
@@ -49,19 +71,19 @@ function irARegistro() {
 </script>
 
 <template>
-  <div class="inicio">
-    <div class="login-card">
-      <div class="contenedcor-evol">
+  <div class="pagina-inicio">
+    <div class="tarjeta-login">
+      <div class="contenedor-logo">
         <img :src="logoEvol" alt="Evol" />
       </div>
 
-      <div class="login-box">
+      <div class="caja-login">
         <h1>Iniciar sesion</h1>
 
         <label for="usuario">Usuario</label>
         <input
           id="usuario"
-          v-model="nombreUsuario"
+          v-model="usuarioEscrito"
           type="text"
           placeholder="Escribe tu usuario"
         />
@@ -69,20 +91,20 @@ function irARegistro() {
         <label for="contrasena">Contrasena</label>
         <input
           id="contrasena"
-          v-model="contrasena"
+          v-model="contrasenaEscrita"
           type="password"
           placeholder="Escribe tu contrasena"
         />
 
-        <p v-if="errorMsg" style="color:#ffb4b4; margin: 6px 0 10px;">
-          {{ errorMsg }}
+        <p v-if="mensajeError" class="texto-error">
+          {{ mensajeError }}
         </p>
 
         <button type="button" @click="entrar">Entrar</button>
 
-        <p class="registro-texto">
+        <p class="texto-registro">
           Aun no tienes cuenta?
-          <button class="registro-link" type="button" @click="irARegistro">
+          <button class="enlace-registro" type="button" @click="irARegistro">
             Haz click aqui para registrarte
           </button>
         </p>
@@ -91,9 +113,8 @@ function irARegistro() {
   </div>
 </template>
 
-
 <style scoped>
-.inicio {
+.pagina-inicio {
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -102,11 +123,11 @@ function irARegistro() {
   font-family: var(--font-family);
   background-image: url("../assets/banner_login2.jpg");
   background-size: cover;
-  background-color: rgba(0, 0, 0, 0.418);  
-  background-blend-mode: multiply;    /*sin esto no va el back*/
+  background-color: rgba(0, 0, 0, 0.418);
+  background-blend-mode: multiply;
 }
 
-.login-card {
+.tarjeta-login {
   width: 100%;
   max-width: 820px;
   min-height: 470px;
@@ -117,7 +138,7 @@ function irARegistro() {
   overflow: hidden;
 }
 
-.contenedcor-evol {
+.contenedor-logo {
   width: 40%;
   background-color: #22c55e;
   display: flex;
@@ -126,13 +147,13 @@ function irARegistro() {
   padding: 20px;
 }
 
-.contenedcor-evol img {
+.contenedor-logo img {
   max-width: 220px;
   width: 100%;
   height: auto;
 }
 
-.login-box {
+.caja-login {
   width: 60%;
   padding: 36px 28px;
   display: flex;
@@ -141,7 +162,7 @@ function irARegistro() {
 }
 
 h1 {
-  margin-bottom: 18px ;
+  margin-bottom: 18px;
   color: var(--verde);
   font-size: 24px;
   text-align: center;
@@ -160,16 +181,18 @@ input {
   padding: 10px;
   border-radius: 6px;
   background-color: var(--oscuro);
-  color: white;
+  color: #ffffff;
   font-size: 14px;
   border: none;
 }
-input:focus{
+
+input:focus {
   background-color: #a4ffc5;
-  color: black;
-  border:none;
+  color: #000000;
+  border: none;
   transition: 0.5s;
 }
+
 button {
   width: 100%;
   padding: 10px;
@@ -182,14 +205,19 @@ button {
   cursor: pointer;
 }
 
-.registro-texto {
-  margin: 14px 0 0 0;
+.texto-error {
+  color: #ffb4b4;
+  margin: 6px 0 10px;
+}
+
+.texto-registro {
+  margin: 14px 0 0;
   text-align: center;
-  color: white;
+  color: #ffffff;
   font-size: 14px;
 }
 
-.registro-link {
+.enlace-registro {
   width: auto;
   margin-left: 6px;
   padding: 0;
@@ -201,6 +229,4 @@ button {
   text-decoration: underline;
   cursor: pointer;
 }
-
-
 </style>
