@@ -43,6 +43,21 @@ function obtenerIdClase(clase) {
   return String(id || "").trim();
 }
 
+function obtenerPlazasMaximas(clase) {
+  const plazasMaximas = Number(clase?.plazasMaximas);
+  if (!Number.isFinite(plazasMaximas) || plazasMaximas <= 0) return 0;
+  return plazasMaximas;
+}
+
+function contarInscritos(clase) {
+  if (!Array.isArray(clase?.inscritos)) return 0;
+  return clase.inscritos.length;
+}
+
+function obtenerPlazasRestantes(clase) {
+  return Math.max(0, obtenerPlazasMaximas(clase) - contarInscritos(clase));
+}
+
 async function abrirModalInscritos(clase) {
   tituloModalInscritos.value = clase?.nombre ? `Inscritos en ${clase.nombre}` : "Inscritos";
   usuariosInscritos.value = [];
@@ -317,7 +332,7 @@ onMounted(cargarClases);
           </label>
 
           <div class="full form-actions">
-            <button class="btn primary text-dark" type="submit" :disabled="guardando">
+            <button class="btn primary" type="submit" :disabled="guardando">
               {{ guardando ? "Guardando..." : "Crear clase" }}
             </button>
           </div>
@@ -347,18 +362,20 @@ onMounted(cargarClases);
                 <th>Descripcion</th>
                 <th>Fecha y hora</th>
                 <th>Plazas</th>
+                <th>Restantes</th>
                 <th>Accion</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="!clases.length && !cargando" class="fila-vacia">
-                <td colspan="5" class="vacio">No hay clases registradas.</td>
+                <td colspan="6" class="vacio">No hay clases registradas.</td>
               </tr>
               <tr v-for="clase in clases" :key="clase._id || `${clase.nombre}-${clase.fechaHora}`">
                 <td>{{ clase.nombre || "-" }}</td>
                 <td class="descripcion-col">{{ clase.descripcion || "-" }}</td>
                 <td>{{ formatearFecha(clase.fechaHora) }}</td>
                 <td>{{ clase.plazasMaximas ?? "-" }}</td>
+                <td>{{ obtenerPlazasRestantes(clase) }}</td>
                 <td class="accion-col">
                   <button
                     type="button"
@@ -367,7 +384,7 @@ onMounted(cargarClases);
                     data-bs-target="#modalInscritosClase"
                     @click="abrirModalInscritos(clase)"
                   >
-                    INSCRITOS
+                   VER INSCRITOS
                   </button>
                 </td>
               </tr>
@@ -388,12 +405,7 @@ onMounted(cargarClases);
         <div class="modal-content">
           <div class="modal-header">
             <h5 id="modalInscritosClaseLabel" class="modal-title">{{ tituloModalInscritos }}</h5>
-            <button
-              type="button"
-              class="btn-close btn-close-white"
-              data-bs-dismiss="modal"
-              aria-label="Cerrar"
-            ></button>
+            <button type="button"class="btn-close btn-close-white"data-bs-dismiss="modal"aria-label="Cerrar"></button>
           </div>
           <div class="modal-body">
             <p v-if="cargandoInscritos">Cargando inscritos...</p>
@@ -520,25 +532,13 @@ textarea {
   border: 1px solid rgba(127, 180, 151, 0.28);
   border-radius: 8px;
   padding: 10px;
-  background-color: rgba(8, 14, 24, 0.85);
-  color: #e6ecf3;
+  background-color: rgba(255, 255, 255, 0.85);
+  color: #000000;
   font-family: inherit;
 }
 
-input:focus,
-textarea:focus {
-  outline: none;
-  border-color: var(--verde);
-  box-shadow: 0 0 0 2px rgba(127, 180, 151, 0.18);
-}
-
-input:disabled {
-  opacity: 0.75;
-  cursor: not-allowed;
-}
 
 textarea {
-  resize: vertical;
 }
 
 .input-help {
@@ -568,7 +568,6 @@ textarea {
 .btn:hover,
 .btn:focus-visible {
   border-color: var(--verde);
-  outline: none;
 }
 
 .btn:disabled {
@@ -583,10 +582,9 @@ textarea {
   font-weight: 700;
 }
 
-.btn.primary:hover,
-.btn.primary:focus-visible {
+.btn.primary:hover{
   background-color: var(--verde);
-  color: #ffffff;
+  color: var(--oscuro);
 }
 
 .btn.ghost {

@@ -304,21 +304,26 @@ h1 {
 .btn-cancelar {
   width: 100%;
   border: 1px solid #ffffff;
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 6px;
+  padding: 9px 14px;
   background-color: transparent;
   color: #ffffff;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.btn-cancelar:hover,
+.btn-cancelar:focus-visible {
+  border-color: var(--verde);
 }
 
 .btn-cancelar:hover {
-  background-color: #ffffff;
+  background-color: var(--verde);
   color: var(--oscuro);
 }
 
 .btn-cancelar:disabled {
-  opacity: 0.55;
+  opacity: 0.65;
   cursor: not-allowed;
   background-color: transparent;
   color: #ffffff;

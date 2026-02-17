@@ -65,11 +65,19 @@ function estaInscribiendo(idClase) {
   return clasesInscribiendo.value.includes(idClase);
 }
 
-function obtenerPlazasDisponibles(clase) {
+function obtenerPlazasMaximas(clase) {
   const plazasMaximas = Number(clase?.plazasMaximas);
-  const inscritos = Array.isArray(clase?.inscritos) ? clase.inscritos.length : 0;
   if (!Number.isFinite(plazasMaximas) || plazasMaximas <= 0) return 0;
-  return Math.max(0, plazasMaximas - inscritos);
+  return plazasMaximas;
+}
+
+function contarInscritos(clase) {
+  if (!Array.isArray(clase?.inscritos)) return 0;
+  return clase.inscritos.length;
+}
+
+function obtenerPlazasRestantes(clase) {
+  return Math.max(0, obtenerPlazasMaximas(clase) - contarInscritos(clase));
 }
 
 async function inscribirse(clase) {
@@ -207,7 +215,7 @@ onMounted(() => {
             <p>{{ clase.descripcion || "Sin descripcion" }}</p>
             <p class="dato">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
             <p class="dato">Plazas: {{ clase.plazasMaximas ?? "-" }}</p>
-            <p class="plazas-disponibles">{{ obtenerPlazasDisponibles(clase) }} PLAZAS</p>
+            <p class="plazas-disponibles">{{ obtenerPlazasRestantes(clase) }} PLAZAS</p>
             <button
               type="button"
               class="btn-inscribirse"
@@ -226,6 +234,7 @@ onMounted(() => {
                   : "Inscribirse"
               }}
             </button>
+            <p class="subtexto">Controla tu asistencia en <a href="/mis-clases" class="subenlace">Mis clases</a></p>
           </div>
         </article>
       </section>
@@ -247,6 +256,9 @@ onMounted(() => {
   align-items: center;
   background-color: var(--oscuro);
   padding: 0 6px;
+}
+.subtexto{
+  font-size: smaller;
 }
 
 .logo {
