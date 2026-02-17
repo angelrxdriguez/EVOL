@@ -5,6 +5,7 @@ import HomeView from "../views/HomeView.vue";
 import ClasesView from "../views/ClasesView.vue";
 import InscribirClaseView from "../views/InscribirClaseView.vue";
 import MisClasesView from "../views/MisClasesView.vue";
+import PerfilView from "../views/PerfilView.vue";
 
 const ROUTER_KEY = Symbol("app-router");
 
@@ -23,6 +24,11 @@ const routeTable = [
     path: "/mis-clases",
     name: "mis-clases",
     component: MisClasesView,
+  },
+  {
+    path: "/perfil",
+    name: "perfil",
+    component: PerfilView,
   },
 ];
 

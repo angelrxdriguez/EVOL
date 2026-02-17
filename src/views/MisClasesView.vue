@@ -43,6 +43,20 @@ function obtenerHoraLocal(valor) {
   });
 }
 
+function obtenerFechaHumana(valor) {
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return "-";
+
+  const fechaTexto = fecha.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
+}
+
 function obtenerRutaImagen(nombreImagen) {
   const nombre = String(nombreImagen || "").trim();
   if (!nombre) return "";
@@ -147,7 +161,7 @@ onMounted(() => {
         <RouterLink to="/home">Inicio</RouterLink>
         <RouterLink to="/inscribir-clase">Clases</RouterLink>
         <RouterLink to="/mis-clases">Mis clases</RouterLink>
-        <a href="#">Perfil</a>
+        <RouterLink to="/perfil">Perfil</RouterLink>
       </div>
     </nav>
 
@@ -175,7 +189,11 @@ onMounted(() => {
           <div class="info-clase">
             <h2>{{ clase.nombre || "Clase" }}</h2>
             <p>{{ clase.descripcion || "Sin descripcion" }}</p>
-            <p class="dato">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
+            <div class="fecha-campo">
+              <span class="fecha-etiqueta">Fecha de la clase</span>
+              <p class="fecha-valor">{{ obtenerFechaHumana(clase.fechaHora) }}</p>
+              <p class="fecha-hora">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
+            </div>
             <button
               type="button"
               class="btn-cancelar"
@@ -301,6 +319,38 @@ h1 {
   color: #c7d2df;
 }
 
+.fecha-campo {
+  margin: 0 0 10px;
+  padding: 10px;
+  border: 1px solid #ffffff;
+  border-radius: 4px;
+  background-color: rgb(16, 19, 32);
+}
+
+.fecha-etiqueta {
+  display: block;
+  margin: 4px;
+  font-size: smaller;
+  color: #c5c5c5;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.fecha-campo .fecha-valor {
+  margin: 4px;
+  color: #9dc7ff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.fecha-campo .fecha-hora {
+  margin: 0;
+  margin-left: 4px;
+  color: #c5c5c5;
+  font-size: 0.88rem;
+}
+
 .btn-cancelar {
   width: 100%;
   border: 1px solid #ffffff;
@@ -340,3 +390,4 @@ h1 {
   }
 }
 </style>
+

@@ -30,6 +30,20 @@ function obtenerHoraLocal(valor) {
   });
 }
 
+function obtenerFechaHumana(valor) {
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return "-";
+
+  const fechaTexto = fecha.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
+}
+
 function obtenerUsuarioIdLocal() {
   try {
     const raw = localStorage.getItem("user");
@@ -185,7 +199,7 @@ onMounted(() => {
         <RouterLink to="/home">Inicio</RouterLink>
         <RouterLink to="/inscribir-clase">Clases</RouterLink>
         <RouterLink to="/mis-clases">Mis clases</RouterLink>
-        <a href="#">Perfil</a>
+        <RouterLink to="/perfil">Perfil</RouterLink>
       </div>
     </nav>
 
@@ -213,9 +227,13 @@ onMounted(() => {
           <div class="info-clase">
             <h2>{{ clase.nombre || "Clase" }}</h2>
             <p>{{ clase.descripcion || "Sin descripcion" }}</p>
-            <p class="dato">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
+            <div class="fecha-campo">
+              <span class="fecha-etiqueta">Fecha de la clase</span>
+              <p class="fecha-valor">{{ obtenerFechaHumana(clase.fechaHora) }}</p>
+              <p class="fecha-hora">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
+            </div>
             <p class="dato">Plazas: {{ clase.plazasMaximas ?? "-" }}</p>
-            <p class="plazas-disponibles">{{ obtenerPlazasRestantes(clase) }} PLAZAS</p>
+            <p class="plazas-disponibles">{{ obtenerPlazasRestantes(clase) }} RESTANTES</p>
             <button
               type="button"
               class="btn-inscribirse"
@@ -355,6 +373,38 @@ h1 {
   color: #c7d2df;
 }
 
+.fecha-campo {
+  margin: 0 0 10px;
+  padding: 10px;
+  border: 1px solid #ffffff;
+  border-radius: 4px;
+  background-color: #172338;
+}
+
+.fecha-etiqueta {
+  display: block;
+  margin: 4px;
+  font-size: smaller;
+  color: #c5c5c5;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.fecha-campo .fecha-valor {
+  margin:4px;
+  color: #9dc7ff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.fecha-campo .fecha-hora {
+  margin: 0;
+  margin-left: 4px;
+  color: #c5c5c5;
+  font-size: 0.88rem;
+}
+
 .plazas-disponibles {
   margin: 0 0 10px;
   padding: 8px 10px;
@@ -397,3 +447,4 @@ h1 {
   }
 }
 </style>
+
