@@ -10,7 +10,7 @@ import logoEvol from "../assets/evol_negativo-zoom2.png";
       </RouterLink>
 
       <div class="links">
-        <RouterLink to="/home">Inicio</RouterLink>
+        <RouterLink to="/home" class="active">Inicio</RouterLink>
         <RouterLink to="/inscribir-clase">Clases</RouterLink>
         <RouterLink to="/mis-clases">Mis clases</RouterLink>
         <RouterLink to="/perfil">Perfil</RouterLink>
@@ -90,7 +90,9 @@ a {
   border-bottom: solid 2px var(--oscuro);
   padding-bottom: 4px;
 }
-
+.active{
+    color: var(--verde);
+}
 .link-icon {
   display: inline-flex;
   align-items: center;
@@ -169,21 +171,5 @@ a:hover {
 .clases:hover i {
   color: var(--oscuro);
 }
-
-@media (max-width: 800px) {
-  .links {
-    margin: 12px;
-    flex-wrap: wrap;
-  }
-
-  .intro {
-    margin: 24px 12px 0;
-  }
-
-  .ventajas-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 </style>
 

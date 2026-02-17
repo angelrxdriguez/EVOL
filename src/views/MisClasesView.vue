@@ -160,7 +160,7 @@ onMounted(() => {
       <div class="links">
         <RouterLink to="/home">Inicio</RouterLink>
         <RouterLink to="/inscribir-clase">Clases</RouterLink>
-        <RouterLink to="/mis-clases">Mis clases</RouterLink>
+        <RouterLink to="/mis-clases" class="active">Mis clases</RouterLink>
         <RouterLink to="/perfil">Perfil</RouterLink>
       </div>
     </nav>
@@ -247,7 +247,9 @@ a {
   border-bottom: solid 2px var(--oscuro);
   padding-bottom: 4px;
 }
-
+.active{
+    color: var(--verde);
+}
 a:hover {
   border-bottom: solid 2px var(--verde);
   transition: 0.3s;
