@@ -258,6 +258,7 @@ app.post('/clases', async (req, res) => {
       plazasMaximas,
       imagen: nombreImagenGuardada,
       inscritos: [],
+      cancelaciones: [],
     }
 
     const result = await clasesCollection.insertOne(nuevaClase)
@@ -384,6 +385,7 @@ app.post('/clases/:idClase/cancelar-inscripcion', async (req, res) => {
 
     const idClaseRaw = String(req.params?.idClase || '').trim()
     const usuarioIdRaw = String(req.body?.usuarioId || '').trim()
+    const cancelacionFueraDePlazo = Boolean(req.body?.cancelacionFueraDePlazo)
 
     if (!ObjectId.isValid(idClaseRaw)) {
       return res.status(400).json({ ok: false, error: 'idClase invalido' })
@@ -396,16 +398,29 @@ app.post('/clases/:idClase/cancelar-inscripcion', async (req, res) => {
     const idClase = new ObjectId(idClaseRaw)
     const usuarioId = new ObjectId(usuarioIdRaw)
 
-    const result = await clasesCollection.updateOne(
-      { _id: idClase },
-      { $pull: { inscritos: { $in: [usuarioIdRaw, usuarioId] } } }
-    )
+    let result
+
+    if (cancelacionFueraDePlazo) {
+      result = await clasesCollection.updateOne(
+        { _id: idClase },
+        { $addToSet: { cancelaciones: usuarioId } }
+      )
+    } else {
+      result = await clasesCollection.updateOne(
+        { _id: idClase },
+        { $pull: { inscritos: { $in: [usuarioIdRaw, usuarioId] } } }
+      )
+    }
 
     if (!result.matchedCount) {
       return res.status(404).json({ ok: false, error: 'Clase no encontrada' })
     }
 
-    return res.json({ ok: true, cancelada: result.modifiedCount > 0 })
+    if (cancelacionFueraDePlazo) {
+      return res.json({ ok: true, cancelada: true, cancelacionFueraDePlazo: true })
+    }
+
+    return res.json({ ok: true, cancelada: result.modifiedCount > 0, cancelacionFueraDePlazo: false })
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message })
   }

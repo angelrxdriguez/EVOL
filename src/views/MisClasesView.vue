@@ -6,8 +6,6 @@ const listaClases = ref([]);
 const cargando = ref(false);
 const mensajeErrorCarga = ref("");
 const mensajeOk = ref("");
-const mensajeErrorCancelacion = ref("");
-const idClaseErrorCancelacion = ref("");
 const usuarioId = ref("");
 const listaClasesCancelando = ref([]);
 
@@ -90,6 +88,20 @@ function estaCancelando(idClase) {
   return false;
 }
 
+function usuarioEstaEnCancelaciones(clase) {
+  if (!usuarioId.value) return false;
+
+  const cancelaciones = Array.isArray(clase?.cancelaciones) ? clase.cancelaciones : [];
+
+  for (const idCancelacion of cancelaciones) {
+    if (normalizarId(idCancelacion) === usuarioId.value) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function agregarCancelacion(idClase) {
   if (!idClase) return;
   if (estaCancelando(idClase)) return;
@@ -107,16 +119,6 @@ function quitarCancelacion(idClase) {
   }
 
   listaClasesCancelando.value = nuevaLista;
-}
-
-function limpiarErrorCancelacion() {
-  mensajeErrorCancelacion.value = "";
-  idClaseErrorCancelacion.value = "";
-}
-
-function mostrarError(idClase, texto) {
-  idClaseErrorCancelacion.value = idClase;
-  mensajeErrorCancelacion.value = texto;
 }
 
 async function leerJsonSeguro(response) {
@@ -165,7 +167,6 @@ async function cargarMisClases() {
 
 async function cancelarInscripcion(clase) {
   mensajeOk.value = "";
-  limpiarErrorCancelacion();
 
   const idClase = obtenerIdClase(clase);
 
@@ -177,10 +178,7 @@ async function cancelarInscripcion(clase) {
     return;
   }
 
-  if (!faltan15(clase?.fechaHora)) {
-    mostrarError(idClase, "Faltan 15 minutos. No puedes cancelar.");
-    return;
-  }
+  const cancelacionFueraDePlazo = !faltan15(clase?.fechaHora);
 
   if (estaCancelando(idClase)) return;
 
@@ -192,7 +190,10 @@ async function cancelarInscripcion(clase) {
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usuarioId: usuarioId.value }),
+      body: JSON.stringify({
+        usuarioId: usuarioId.value,
+        cancelacionFueraDePlazo,
+      }),
     });
 
     const data = await leerJsonSeguro(response);
@@ -201,9 +202,9 @@ async function cancelarInscripcion(clase) {
       return;
     }
 
-    if (data?.cancelada) {
+    if (data?.cancelada && !data?.cancelacionFueraDePlazo) {
       mensajeOk.value = "Inscripcion cancelada";
-    } else {
+    } else if (!data?.cancelacionFueraDePlazo) {
       mensajeOk.value = "No estabas inscrito en esta clase";
     }
 
@@ -269,13 +270,12 @@ onMounted(alMontarComponente);
               <p class="hora-fecha">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
             </div>
 
-            <p
-              v-if="mensajeErrorCancelacion &&idClaseErrorCancelacion === obtenerIdClase(clase)"class="errorCancelacion">
-              
-              <span class="error"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"><br></i>{{ mensajeErrorCancelacion }}</span>
+            <p v-if="usuarioEstaEnCancelaciones(clase)" class="texto-cancelacion-efectuada">
+              Cancelacion efectuada
             </p>
 
             <button
+              v-else
               type="button"
               class="boton-cancelar"
               :disabled="estaCancelando(obtenerIdClase(clase))"
@@ -291,8 +291,6 @@ onMounted(alMontarComponente);
 </template>
 
 <style scoped>
-@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
-
 .pagina-mis-clases {
   min-height: 100vh;
   background-color: var(--oscuro);
@@ -365,17 +363,14 @@ h1 {
 .estado-ok {
   color: var(--verde);
 }
-.error{
-text-align: center;
-}
-.errorCancelacion {
+
+.texto-cancelacion-efectuada {
+  margin: 0 0 10px;
   padding: 8px 10px;
   border: 1px solid #ffffff;
   border-radius: 6px;
-  color: #ff6b6b;
-  background-color: rgb(43, 1, 1);
-  display: flex;
-  align-items: center;
+  color: var(--verde);
+  text-align: center;
 }
 
 

@@ -10,8 +10,8 @@ import PerfilView from "../views/PerfilView.vue";
 const ROUTER_KEY = Symbol("app-router");
 
 const routeTable = [
-  { path: "/", name: "inicio", component: InicioView },
-  { path: "/registro", name: "registro", component: RegistroView },
+  { path: "/", name: "inicio", component: InicioView, publica: true },
+  { path: "/registro", name: "registro", component: RegistroView, publica: true },
   { path: "/home", name: "home", component: HomeView },
   { path: "/admin", name: "admin", component: ClasesView },
   { path: "/clases", name: "clases", component: ClasesView },
@@ -35,6 +35,27 @@ const routeTable = [
 const fallbackRouteName = "inicio";
 const routesByPath = new Map(routeTable.map((route) => [route.path, route]));
 const routesByName = new Map(routeTable.map((route) => [route.name, route]));
+
+function usuarioEstaLogueado() {
+  try {
+    const textoUsuario = localStorage.getItem("user");
+    if (!textoUsuario) return false;
+
+    const usuario = JSON.parse(textoUsuario);
+    return Boolean(usuario && typeof usuario === "object");
+  } catch {
+    return false;
+  }
+}
+
+function obtenerAcceso(path) {
+  const route = routesByPath.get(path);
+  if (route?.publica || usuarioEstaLogueado()) {
+    return path;
+  }
+
+  return routesByName.get(fallbackRouteName)?.path || "/";
+}
 
 function normalizePath(path) {
   if (!path) return "/";
@@ -65,14 +86,21 @@ function toPath(target) {
   return "/";
 }
 
-function findRoute(path) {
+function encontrarRuta(path) {
   return routesByPath.get(path) || routesByName.get(fallbackRouteName);
 }
 
-const currentPath = ref(normalizePath(window.location.pathname));
+const pathInicial = normalizePath(window.location.pathname);
+const pathInicialSeguro = obtenerAcceso(pathInicial);
+
+if (pathInicial !== pathInicialSeguro) {
+  window.history.replaceState({}, "", pathInicialSeguro);
+}
+
+const currentPath = ref(pathInicialSeguro);
 
 function applyNavigation(target, replace = false) {
-  const nextPath = toPath(target);
+  const nextPath = obtenerAcceso(toPath(target));
   const current = currentPath.value;
 
   if (nextPath === current) return;
@@ -97,14 +125,21 @@ const router = {
 };
 
 window.addEventListener("popstate", () => {
-  currentPath.value = normalizePath(window.location.pathname);
+  const path = normalizePath(window.location.pathname);
+  const pathSeguro = obtenerAcceso(path);
+
+  if (path !== pathSeguro) {
+    window.history.replaceState({}, "", pathSeguro);
+  }
+
+  currentPath.value = pathSeguro;
 });
 
 const RouterView = {
   name: "RouterView",
   setup() {
     return () => {
-      const match = findRoute(currentPath.value);
+      const match = encontrarRuta(currentPath.value);
       return h(match.component);
     };
   },
