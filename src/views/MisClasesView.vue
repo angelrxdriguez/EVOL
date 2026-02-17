@@ -4,8 +4,10 @@ import logoEvol from "../assets/evol_negativo-zoom2.png";
 
 const listaClases = ref([]);
 const cargando = ref(false);
-const mensajeError = ref("");
+const mensajeErrorCarga = ref("");
 const mensajeOk = ref("");
+const mensajeErrorCancelacion = ref("");
+const idClaseErrorCancelacion = ref("");
 const usuarioId = ref("");
 const listaClasesCancelando = ref([]);
 
@@ -60,6 +62,17 @@ function obtenerFechaHumana(fechaHora) {
   return textoFecha.charAt(0).toUpperCase() + textoFecha.slice(1);
 }
 
+function faltan15(fechaHora) {
+  const fechaClase = new Date(fechaHora);
+  if (Number.isNaN(fechaClase.getTime())) return false;
+
+  const ahora = new Date();
+  const diferenciaMs = fechaClase.getTime() - ahora.getTime();
+  const quinceMinutosMs = 15 * 60 * 1000;
+
+  return diferenciaMs > quinceMinutosMs;
+}
+
 function obtenerRutaImagen(nombreImagen) {
   const nombre = String(nombreImagen || "").trim();
   if (!nombre) return "";
@@ -96,6 +109,16 @@ function quitarCancelacion(idClase) {
   listaClasesCancelando.value = nuevaLista;
 }
 
+function limpiarErrorCancelacion() {
+  mensajeErrorCancelacion.value = "";
+  idClaseErrorCancelacion.value = "";
+}
+
+function mostrarError(idClase, texto) {
+  idClaseErrorCancelacion.value = idClase;
+  mensajeErrorCancelacion.value = texto;
+}
+
 async function leerJsonSeguro(response) {
   try {
     return await response.json();
@@ -105,12 +128,12 @@ async function leerJsonSeguro(response) {
 }
 
 async function cargarMisClases() {
-  mensajeError.value = "";
+  mensajeErrorCarga.value = "";
   cargando.value = true;
 
   if (!usuarioId.value) {
     listaClases.value = [];
-    mensajeError.value = "Debes iniciar sesion para ver tus clases";
+    mensajeErrorCarga.value = "Debes iniciar sesion para ver tus clases";
     cargando.value = false;
     return;
   }
@@ -121,7 +144,7 @@ async function cargarMisClases() {
     const data = await leerJsonSeguro(response);
 
     if (!response.ok || data?.ok === false) {
-      mensajeError.value = data?.error || "No se pudieron cargar tus clases";
+      mensajeErrorCarga.value = data?.error || "No se pudieron cargar tus clases";
       listaClases.value = [];
       return;
     }
@@ -133,7 +156,7 @@ async function cargarMisClases() {
     }
   } catch (error) {
     console.error("[mis-clases] Error cargando clases:", error);
-    mensajeError.value = "Error de red al cargar tus clases";
+    mensajeErrorCarga.value = "Error de red al cargar tus clases";
     listaClases.value = [];
   } finally {
     cargando.value = false;
@@ -141,18 +164,21 @@ async function cargarMisClases() {
 }
 
 async function cancelarInscripcion(clase) {
-  mensajeError.value = "";
   mensajeOk.value = "";
+  limpiarErrorCancelacion();
 
   const idClase = obtenerIdClase(clase);
 
   if (!usuarioId.value) {
-    mensajeError.value = "Debes iniciar sesion para cancelar";
     return;
   }
 
   if (!idClase) {
-    mensajeError.value = "Clase invalida";
+    return;
+  }
+
+  if (!faltan15(clase?.fechaHora)) {
+    mostrarError(idClase, "Faltan 15 minutos. No puedes cancelar.");
     return;
   }
 
@@ -172,7 +198,6 @@ async function cancelarInscripcion(clase) {
     const data = await leerJsonSeguro(response);
 
     if (!response.ok || data?.ok === false) {
-      mensajeError.value = data?.error || "No se pudo cancelar la inscripcion";
       return;
     }
 
@@ -185,7 +210,6 @@ async function cancelarInscripcion(clase) {
     await cargarMisClases();
   } catch (error) {
     console.error("[mis-clases] Error cancelando inscripcion:", error);
-    mensajeError.value = "Error de red al cancelar";
   } finally {
     quitarCancelacion(idClase);
   }
@@ -219,10 +243,10 @@ onMounted(alMontarComponente);
 
       <p v-if="mensajeOk" class="estado estado-ok">{{ mensajeOk }}</p>
       <p v-if="cargando" class="estado">Cargando clases...</p>
-      <p v-else-if="mensajeError" class="estado estado-error">{{ mensajeError }}</p>
+      <p v-else-if="mensajeErrorCarga" class="estado estado-error">{{ mensajeErrorCarga }}</p>
       <p v-else-if="!listaClases.length" class="estado">No tienes clases inscritas.</p>
 
-      <section v-if="!cargando && !mensajeError && listaClases.length" class="rejilla-clases">
+      <section v-if="!cargando && !mensajeErrorCarga && listaClases.length" class="rejilla-clases">
         <article
           v-for="clase in listaClases"
           :key="clase._id || `${clase.nombre}-${clase.fechaHora}`"
@@ -245,6 +269,12 @@ onMounted(alMontarComponente);
               <p class="hora-fecha">Hora: {{ obtenerHoraLocal(clase.fechaHora) }}</p>
             </div>
 
+            <p
+              v-if="mensajeErrorCancelacion &&idClaseErrorCancelacion === obtenerIdClase(clase)"class="errorCancelacion">
+              
+              <span class="error"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"><br></i>{{ mensajeErrorCancelacion }}</span>
+            </p>
+
             <button
               type="button"
               class="boton-cancelar"
@@ -261,6 +291,8 @@ onMounted(alMontarComponente);
 </template>
 
 <style scoped>
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+
 .pagina-mis-clases {
   min-height: 100vh;
   background-color: var(--oscuro);
@@ -333,6 +365,19 @@ h1 {
 .estado-ok {
   color: var(--verde);
 }
+.error{
+text-align: center;
+}
+.errorCancelacion {
+  padding: 8px 10px;
+  border: 1px solid #ffffff;
+  border-radius: 6px;
+  color: #ff6b6b;
+  background-color: rgb(43, 1, 1);
+  display: flex;
+  align-items: center;
+}
+
 
 .rejilla-clases {
   display: grid;
