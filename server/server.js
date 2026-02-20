@@ -6,6 +6,7 @@ import express from 'express'
 import cron from 'node-cron'
 import axios from 'axios'
 import { MongoClient, ObjectId } from 'mongodb'
+import bcrypt from 'bcrypt'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -140,11 +141,13 @@ app.post('/registro', async (req, res) => {
       return res.status(409).json({ ok: false, error: 'El nombre de usuario ya existe' })
     }
 
+    const contrasenaHash = await bcrypt.hash(String(contrasena), 12)
+
     const result = await usuariosCollection.insertOne({
       nombreUsuario: nombreUsuarioLimpio,
       nombre: nombreLimpio,
       apellidos: apellidosLimpio,
-      contrasena,
+      contrasena: contrasenaHash,
       es_admin: 0,
       rol: 'user',
       createdAt: new Date(),
@@ -174,7 +177,13 @@ app.post('/login', async (req, res) => {
 
     const user = await usuariosCollection.findOne({ nombreUsuario })
 
-    if (!user || user.contrasena !== contrasena) {
+    if (!user) {
+      return res.status(401).json({ ok: false, error: 'Usuario o contrasena incorrectos' })
+    }
+
+    const contrasenaValida = await bcrypt.compare(String(contrasena), String(user.contrasena || ''))
+
+    if (!contrasenaValida) {
       return res.status(401).json({ ok: false, error: 'Usuario o contrasena incorrectos' })
     }
 
