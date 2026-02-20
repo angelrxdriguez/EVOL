@@ -7,6 +7,7 @@ const cargando = ref(false);
 const mensajeErrorCarga = ref("");
 const mensajeOk = ref("");
 const usuarioId = ref("");
+const token = ref("");
 const listaClasesCancelando = ref([]);
 
 function obtenerUsuarioIdLocal() {
@@ -16,6 +17,14 @@ function obtenerUsuarioIdLocal() {
 
     const usuario = JSON.parse(textoUsuario);
     return String(usuario?.id || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function obtenerTokenLocal() {
+  try {
+    return String(localStorage.getItem("token") || "").trim();
   } catch {
     return "";
   }
@@ -140,9 +149,18 @@ async function cargarMisClases() {
     return;
   }
 
+  if (!token.value) {
+    listaClases.value = [];
+    mensajeErrorCarga.value = "Sesion invalida, vuelve a iniciar sesion";
+    cargando.value = false;
+    return;
+  }
+
   try {
     const url = `/api/clases/usuario/${encodeURIComponent(usuarioId.value)}`;
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
     const data = await leerJsonSeguro(response);
 
     if (!response.ok || data?.ok === false) {
@@ -174,6 +192,10 @@ async function cancelarInscripcion(clase) {
     return;
   }
 
+  if (!token.value) {
+    return;
+  }
+
   if (!idClase) {
     return;
   }
@@ -189,7 +211,10 @@ async function cancelarInscripcion(clase) {
 
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
       body: JSON.stringify({
         usuarioId: usuarioId.value,
         cancelacionFueraDePlazo,
@@ -218,6 +243,7 @@ async function cancelarInscripcion(clase) {
 
 function alMontarComponente() {
   usuarioId.value = obtenerUsuarioIdLocal();
+  token.value = obtenerTokenLocal();
   cargarMisClases();
 }
 

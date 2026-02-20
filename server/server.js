@@ -7,6 +7,7 @@ import cron from 'node-cron'
 import axios from 'axios'
 import { MongoClient, ObjectId } from 'mongodb'
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -22,8 +23,9 @@ const mongoClient = new MongoClient(MONGO_URI)
 let usuariosCollection
 let clasesCollection
 
-const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_TEXT, PORT } = process.env
+const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_TEXT, PORT, JWT_SECRET } = process.env
 const SERVER_PORT = Number(PORT) || 3002
+const JWT_SECRET_KEY = String(JWT_SECRET || 'evol_jwt_secret_dev').trim()
 
 const allowedOrigin = 'http://localhost:5173'
 app.use((req, res, next) => {
@@ -52,6 +54,34 @@ function idAString(valor) {
   if (typeof valor === 'string') return valor.trim()
   if (typeof valor.toHexString === 'function') return valor.toHexString()
   return String(valor).trim()
+}
+
+function extraerToken(req) {
+  const authorization = String(req.headers?.authorization || '').trim()
+  if (!authorization.toLowerCase().startsWith('bearer ')) return ''
+  return authorization.slice(7).trim()
+}
+
+function autenticarToken(req, res, next) {
+  const token = extraerToken(req)
+  if (!token) {
+    return res.status(401).json({ ok: false, error: 'Token no enviado' })
+  }
+
+  try {
+    req.auth = jwt.verify(token, JWT_SECRET_KEY)
+    return next()
+  } catch {
+    return res.status(401).json({ ok: false, error: 'Token invalido o expirado' })
+  }
+}
+
+function usuarioAutenticadoEsAdmin(req) {
+  return Number(req.auth?.es_admin) === 1
+}
+
+function usuarioAutenticadoCoincide(req, usuarioId) {
+  return String(req.auth?.sub || '').trim() === String(usuarioId || '').trim()
 }
 
 async function guardarImagenEnUploads(nombreArchivo, imagenContenidoBase64) {
@@ -188,9 +218,19 @@ app.post('/login', async (req, res) => {
     }
 
     const esAdmin = Number(user.es_admin) === 1 ? 1 : 0
+    const token = jwt.sign(
+      {
+        sub: String(user._id),
+        nombreUsuario: user.nombreUsuario,
+        es_admin: esAdmin,
+      },
+      JWT_SECRET_KEY,
+      { expiresIn: '7d' }
+    )
 
     return res.json({
       ok: true,
+      token,
       user: {
         id: String(user._id),
         nombreUsuario: user.nombreUsuario,
@@ -218,8 +258,12 @@ app.get('/clases', async (_, res) => {
   }
 })
 
-app.post('/clases', async (req, res) => {
+app.post('/clases', autenticarToken, async (req, res) => {
   try {
+    if (!usuarioAutenticadoEsAdmin(req)) {
+      return res.status(403).json({ ok: false, error: 'No autorizado' })
+    }
+
     if (!clasesCollection) {
       return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
     }
@@ -281,7 +325,7 @@ app.post('/clases', async (req, res) => {
   }
 })
 
-app.post('/clases/:idClase/inscribirse', async (req, res) => {
+app.post('/clases/:idClase/inscribirse', autenticarToken, async (req, res) => {
   try {
     if (!clasesCollection) {
       return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
@@ -296,6 +340,10 @@ app.post('/clases/:idClase/inscribirse', async (req, res) => {
 
     if (!ObjectId.isValid(usuarioIdRaw)) {
       return res.status(400).json({ ok: false, error: 'usuarioId invalido' })
+    }
+
+    if (!usuarioAutenticadoEsAdmin(req) && !usuarioAutenticadoCoincide(req, usuarioIdRaw)) {
+      return res.status(403).json({ ok: false, error: 'No autorizado para este usuario' })
     }
 
     const idClase = new ObjectId(idClaseRaw)
@@ -316,8 +364,12 @@ app.post('/clases/:idClase/inscribirse', async (req, res) => {
   }
 })
 
-app.get('/clases/:idClase/inscritos', async (req, res) => {
+app.get('/clases/:idClase/inscritos', autenticarToken, async (req, res) => {
   try {
+    if (!usuarioAutenticadoEsAdmin(req)) {
+      return res.status(403).json({ ok: false, error: 'No autorizado' })
+    }
+
     if (!clasesCollection || !usuariosCollection) {
       return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
     }
@@ -363,7 +415,7 @@ app.get('/clases/:idClase/inscritos', async (req, res) => {
   }
 })
 
-app.get('/clases/usuario/:usuarioId', async (req, res) => {
+app.get('/clases/usuario/:usuarioId', autenticarToken, async (req, res) => {
   try {
     if (!clasesCollection) {
       return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
@@ -372,6 +424,10 @@ app.get('/clases/usuario/:usuarioId', async (req, res) => {
     const usuarioId = String(req.params?.usuarioId || '').trim()
     if (!ObjectId.isValid(usuarioId)) {
       return res.status(400).json({ ok: false, error: 'usuarioId invalido' })
+    }
+
+    if (!usuarioAutenticadoEsAdmin(req) && !usuarioAutenticadoCoincide(req, usuarioId)) {
+      return res.status(403).json({ ok: false, error: 'No autorizado para este usuario' })
     }
 
     const clasesTotales = await clasesCollection.find({}).sort({ fechaHora: 1 }).toArray()
@@ -386,7 +442,7 @@ app.get('/clases/usuario/:usuarioId', async (req, res) => {
   }
 })
 
-app.post('/clases/:idClase/cancelar-inscripcion', async (req, res) => {
+app.post('/clases/:idClase/cancelar-inscripcion', autenticarToken, async (req, res) => {
   try {
     if (!clasesCollection) {
       return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
@@ -402,6 +458,10 @@ app.post('/clases/:idClase/cancelar-inscripcion', async (req, res) => {
 
     if (!ObjectId.isValid(usuarioIdRaw)) {
       return res.status(400).json({ ok: false, error: 'usuarioId invalido' })
+    }
+
+    if (!usuarioAutenticadoEsAdmin(req) && !usuarioAutenticadoCoincide(req, usuarioIdRaw)) {
+      return res.status(403).json({ ok: false, error: 'No autorizado para este usuario' })
     }
 
     const idClase = new ObjectId(idClaseRaw)

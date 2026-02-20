@@ -27,6 +27,10 @@ function guardarUsuarioLocal(usuario) {
   localStorage.setItem("user", JSON.stringify(usuario));
 }
 
+function guardarTokenLocal(token) {
+  localStorage.setItem("token", String(token || ""));
+}
+
 function esUsuarioAdmin(usuario) {
   return Number(usuario?.es_admin) === 1;
 }
@@ -52,6 +56,7 @@ async function entrar() {
     }
 
     guardarUsuarioLocal(data.user);
+    guardarTokenLocal(data.token);
 
     if (esUsuarioAdmin(data.user)) {
       router.push({ name: "clases" });

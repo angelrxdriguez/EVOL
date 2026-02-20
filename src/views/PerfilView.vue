@@ -38,6 +38,7 @@ const datosUsuario = leerDatosUsuario();
 
 function cerrarSesion() {
   localStorage.removeItem("user");
+  localStorage.removeItem("token");
   router.push({ name: "inicio" });
 }
 </script>

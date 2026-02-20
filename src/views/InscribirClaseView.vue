@@ -8,6 +8,7 @@ const cargando = ref(false);
 const errorMsg = ref("");
 const okMsg = ref("");
 const usuarioId = ref("");
+const token = ref("");
 const clasesInscribiendo = ref([]);
 
 function obtenerFechaLocalSinHora(valor) {
@@ -55,6 +56,14 @@ function obtenerUsuarioIdLocal() {
 
     const user = JSON.parse(raw);
     return String(user?.id || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function obtenerTokenLocal() {
+  try {
+    return String(localStorage.getItem("token") || "").trim();
   } catch {
     return "";
   }
@@ -133,6 +142,11 @@ async function inscribirse(clase) {
     return;
   }
 
+  if (!token.value) {
+    errorMsg.value = "Sesion invalida, vuelve a iniciar sesion";
+    return;
+  }
+
   if (!idClase) {
     errorMsg.value = "Clase invalida";
     return;
@@ -146,9 +160,12 @@ async function inscribirse(clase) {
   try {
     const url = `/api/clases/${encodeURIComponent(idClase)}/inscribirse`;
 
+    const headers = { "Content-Type": "application/json" };
+    headers.Authorization = `Bearer ${token.value}`;
+
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ usuarioId: usuarioId.value }),
     });
 
@@ -239,6 +256,7 @@ async function cargarClasesHoy() {
 
 function alMontarComponente() {
   usuarioId.value = obtenerUsuarioIdLocal();
+  token.value = obtenerTokenLocal();
   cargarClasesHoy();
 }
 

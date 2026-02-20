@@ -39,7 +39,9 @@ const routesByName = new Map(routeTable.map((route) => [route.name, route]));
 function usuarioEstaLogueado() {
   try {
     const textoUsuario = localStorage.getItem("user");
+    const token = String(localStorage.getItem("token") || "").trim();
     if (!textoUsuario) return false;
+    if (!token) return false;
 
     const usuario = JSON.parse(textoUsuario);
     return Boolean(usuario && typeof usuario === "object");

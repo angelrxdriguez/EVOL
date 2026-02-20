@@ -22,6 +22,7 @@ const tituloModal = ref("Inscritos");
 const listaInscritos = ref([]);
 const cargandoInscritos = ref(false);
 const mensajeErrorInscritos = ref("");
+const token = ref("");
 
 const formateadorFecha = new Intl.DateTimeFormat("es-ES", {
   dateStyle: "short",
@@ -62,6 +63,14 @@ function obtenerPlazasRestantes(clase) {
   const maximas = obtenerPlazasMaximas(clase);
   const inscritos = contarInscritos(clase);
   return Math.max(0, maximas - inscritos);
+}
+
+function obtenerTokenLocal() {
+  try {
+    return String(localStorage.getItem("token") || "").trim();
+  } catch {
+    return "";
+  }
 }
 
 async function leerJsonSeguro(response) {
@@ -181,7 +190,9 @@ async function abrirModalInscritos(clase) {
       return;
     }
 
-    const response = await fetch(`/api/clases/${encodeURIComponent(idClase)}/inscritos`);
+    const response = await fetch(`/api/clases/${encodeURIComponent(idClase)}/inscritos`, {
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
     const data = await leerJsonSeguro(response);
 
     if (!response.ok || data?.ok === false) {
@@ -242,6 +253,11 @@ async function crearClase() {
   guardandoClase.value = true;
 
   try {
+    if (!token.value) {
+      mensajeError.value = "Sesion invalida, vuelve a iniciar sesion";
+      return;
+    }
+
     const fechaHoraIso = crearFechaHoraIso(formulario.value.fecha, formulario.value.hora);
     if (!fechaHoraIso) {
       mensajeError.value = "La fecha y hora no es valida";
@@ -256,7 +272,10 @@ async function crearClase() {
 
     const response = await fetch("/api/clases", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
       body: JSON.stringify(datosClase),
     });
 
@@ -278,7 +297,10 @@ async function crearClase() {
   }
 }
 
-onMounted(cargarClases);
+onMounted(() => {
+  token.value = obtenerTokenLocal();
+  cargarClases();
+});
 </script>
 
 <template>
