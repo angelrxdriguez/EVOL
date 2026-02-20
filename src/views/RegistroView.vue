@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from "vue";
+import { z } from "zod";
 import { useRouter } from "../router";
 import logoEvol from "../assets/evol_positivo.png";
 
@@ -15,19 +16,31 @@ function limpiarErrorRegistro() {
   mensajeErrorRegistro.value = "";
 }
 
-function validarContrasenas() {
-  if (!contrasenaNueva.value) {
-    return "La contrasena esta vacia o no coincide";
-  }
+const esquemaRegistro = z
+  .object({
+    nombreUsuario: z
+      .string()
+      .trim()
+      .min(3, "El nombre de usuario debe tener al menos 3 caracteres"),
 
-  if (contrasenaNueva.value !== repetirContrasenaNueva.value) {
-    return "La contrasena esta vacia o no coincide";
-  }
+    nombre: z.string().trim().min(1, "El nombre es obligatorio"),
 
-  return "";
-}
+    apellidos: z.string().trim().min(1, "Los apellidos son obligatorios"),
+
+    contrasena: z
+      .string()
+      .min(1, "La contraseña es obligatoria")
+      .min(6, "La contraseña debe tener al menos 6 caracteres"),
+
+    repetirContrasena: z.string().min(1, "Repite la contraseña"),
+  })
+  .refine((datos) => datos.contrasena === datos.repetirContrasena, {
+    message: "Las contraseñas no coinciden",
+    path: ["repetirContrasena"],
+  });
 
 function construirDatosRegistro() {
+  // Mantengo tu función, pero ahora la usaremos tras validar con Zod
   return {
     nombreUsuario: String(usuarioNuevo.value || "").trim(),
     nombre: String(nombreNuevo.value || "").trim(),
@@ -44,20 +57,41 @@ async function leerJsonSeguro(response) {
   }
 }
 
+function validarConZod() {
+  const datosFormulario = {
+    nombreUsuario: usuarioNuevo.value,
+    nombre: nombreNuevo.value,
+    apellidos: apellidosNuevos.value,
+    contrasena: contrasenaNueva.value,
+    repetirContrasena: repetirContrasenaNueva.value,
+  };
+
+  const resultado = esquemaRegistro.safeParse(datosFormulario);
+
+  if (!resultado.success) {
+    const primerError = resultado.error.issues?.[0]?.message || "Datos invalidos";
+    return { ok: false, error: primerError };
+  }
+
+  return { ok: true, datos: resultado.data };
+}
+
 async function crearCuenta() {
-  const errorContrasena = validarContrasenas();
-  if (errorContrasena) {
-    mensajeErrorRegistro.value = errorContrasena;
+  limpiarErrorRegistro();
+
+  const validacion = validarConZod();
+  if (!validacion.ok) {
+    mensajeErrorRegistro.value = validacion.error;
     return;
   }
 
-  limpiarErrorRegistro();
+  const payload = construirDatosRegistro();
 
   try {
     const response = await fetch("/api/registro", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(construirDatosRegistro()),
+      body: JSON.stringify(payload),
     });
 
     const data = await leerJsonSeguro(response);
