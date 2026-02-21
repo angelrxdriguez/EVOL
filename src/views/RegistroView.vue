@@ -126,44 +126,24 @@ function irInicio() {
 
       <div class="caja-formulario">
         <h1>Bienvenido</h1>
-
+        <p v-if="mensajeErrorRegistro" class="texto-error">{{ mensajeErrorRegistro }}</p>
         <label for="nombre-usuario">Nombre de usuario</label>
-        <input
-          id="nombre-usuario"
-          v-model="usuarioNuevo"
-          type="text"
-          placeholder="Escribe tu nombre de usuario"
-        />
+        <input id="nombre-usuario" v-model="usuarioNuevo" type="text" placeholder="Escribe tu nombre de usuario" />
 
         <label for="nombre">Nombre</label>
         <input id="nombre" v-model="nombreNuevo" type="text" placeholder="Escribe tu nombre" />
 
         <label for="apellidos">Apellidos</label>
-        <input
-          id="apellidos"
-          v-model="apellidosNuevos"
-          type="text"
-          placeholder="Escribe tus apellidos"
-        />
+        <input id="apellidos" v-model="apellidosNuevos" type="text" placeholder="Escribe tus apellidos" />
 
-        <label for="contrasena">Contrasena</label>
-        <input
-          id="contrasena"
-          v-model="contrasenaNueva"
-          type="password"
-          placeholder="Escribe tu contrasena"
-        />
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena" v-model="contrasenaNueva" type="password" placeholder="Escribe tu contraseña" />
 
-        <label for="repetir-contrasena">Repetir contrasena</label>
-        <input
-          id="repetir-contrasena"
-          v-model="repetirContrasenaNueva"
-          type="password"
-          placeholder="Repite tu contrasena"
-        />
+        <label for="repetir-contrasena">Repetir contraseña</label>
+        <input id="repetir-contrasena" v-model="repetirContrasenaNueva" type="password"
+          placeholder="Repite tu contraseña" />
 
         <button type="button" @click="crearCuenta">Crear cuenta</button>
-        <p v-if="mensajeErrorRegistro" class="texto-error">{{ mensajeErrorRegistro }}</p>
 
         <p class="texto-inicio">
           Ya tienes cuenta?

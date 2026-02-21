@@ -90,9 +90,11 @@ a {
   border-bottom: solid 2px var(--oscuro);
   padding-bottom: 4px;
 }
-.active{
-    color: var(--verde);
+
+.active {
+  color: var(--verde);
 }
+
 .link-icon {
   display: inline-flex;
   align-items: center;
@@ -172,4 +174,3 @@ a:hover {
   color: var(--oscuro);
 }
 </style>
-

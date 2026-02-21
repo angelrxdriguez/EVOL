@@ -209,13 +209,13 @@ app.post('/login', async (req, res) => {
     const user = await usuariosCollection.findOne({ nombreUsuario })
 
     if (!user) {
-      return res.status(401).json({ ok: false, error: 'Usuario o contrasena incorrectos' })
+      return res.status(401).json({ ok: false, error: 'Usuario o contraseña incorrectos' })
     }
 
     const contrasenaValida = await bcrypt.compare(String(contrasena), String(user.contrasena || ''))
 
     if (!contrasenaValida) {
-      return res.status(401).json({ ok: false, error: 'Usuario o contrasena incorrectos' })
+      return res.status(401).json({ ok: false, error: 'Usuario o contraseña incorrectos' })
     }
 
     const esAdmin = Number(user.es_admin) === 1 ? 1 : 0

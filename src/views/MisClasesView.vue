@@ -274,17 +274,10 @@ onMounted(alMontarComponente);
       <p v-else-if="!listaClases.length" class="estado">No tienes clases inscritas.</p>
 
       <section v-if="!cargando && !mensajeErrorCarga && listaClases.length" class="rejilla-clases">
-        <article
-          v-for="clase in listaClases"
-          :key="clase._id || `${clase.nombre}-${clase.fechaHora}`"
-          class="tarjeta-clase"
-        >
-          <img
-            v-if="obtenerRutaImagen(clase.imagen)"
-            :src="obtenerRutaImagen(clase.imagen)"
-            :alt="clase.nombre || 'Imagen de clase'"
-            class="imagen-clase"
-          />
+        <article v-for="clase in listaClases" :key="clase._id || `${clase.nombre}-${clase.fechaHora}`"
+          class="tarjeta-clase">
+          <img v-if="obtenerRutaImagen(clase.imagen)" :src="obtenerRutaImagen(clase.imagen)"
+            :alt="clase.nombre || 'Imagen de clase'" class="imagen-clase" />
 
           <div class="info-clase">
             <h2>{{ clase.nombre || "Clase" }}</h2>
@@ -300,13 +293,8 @@ onMounted(alMontarComponente);
               Cancelacion efectuada
             </p>
 
-            <button
-              v-else
-              type="button"
-              class="boton-cancelar"
-              :disabled="estaCancelando(obtenerIdClase(clase))"
-              @click="cancelarInscripcion(clase)"
-            >
+            <button v-else type="button" class="boton-cancelar" :disabled="estaCancelando(obtenerIdClase(clase))"
+              @click="cancelarInscripcion(clase)">
               {{ estaCancelando(obtenerIdClase(clase)) ? "Cancelando..." : "Cancelar" }}
             </button>
           </div>

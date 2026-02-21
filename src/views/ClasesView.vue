@@ -330,13 +330,8 @@ onMounted(() => {
         <form class="rejilla-formulario" @submit.prevent="crearClase">
           <label class="campo-formulario">
             Nombre
-            <input
-              v-model="formulario.nombre"
-              type="text"
-              placeholder="Ej: Spinning - Nivel Medio"
-              maxlength="120"
-              required
-            />
+            <input v-model="formulario.nombre" type="text" placeholder="Ej: Spinning - Nivel Medio" maxlength="120"
+              required />
           </label>
 
           <label class="campo-formulario">
@@ -351,37 +346,20 @@ onMounted(() => {
 
           <label class="campo-formulario">
             Plazas maximas
-            <input
-              v-model.number="formulario.plazasMaximas"
-              type="number"
-              min="1"
-              step="1"
-              required
-            />
+            <input v-model.number="formulario.plazasMaximas" type="number" min="1" step="1" required />
           </label>
 
           <label class="campo-formulario campo-completo">
             Imagen
-            <input
-              ref="inputImagen"
-              type="file"
-              accept="image/*"
-              required
-              @change="manejarCambioImagen"
-            />
+            <input ref="inputImagen" type="file" accept="image/*" required @change="manejarCambioImagen" />
             <small class="texto-ayuda">Archivo seleccionado: {{ formulario.imagen || "-" }}</small>
             <small class="texto-ayuda">La imagen se copia automaticamente a src/uploads.</small>
           </label>
 
           <label class="campo-formulario campo-completo">
             Descripcion
-            <textarea
-              v-model="formulario.descripcion"
-              rows="4"
-              maxlength="500"
-              placeholder="Descripcion de la clase"
-              required
-            />
+            <textarea v-model="formulario.descripcion" rows="4" maxlength="500" placeholder="Descripcion de la clase"
+              required />
           </label>
 
           <div class="campo-completo acciones-formulario">
@@ -402,12 +380,7 @@ onMounted(() => {
             <p>Clases activas e historicas en la coleccion.</p>
           </div>
 
-          <button
-            type="button"
-            class="boton boton-secundario"
-            @click="cargarClases"
-            :disabled="cargandoClases"
-          >
+          <button type="button" class="boton boton-secundario" @click="cargarClases" :disabled="cargandoClases">
             {{ cargandoClases ? "Cargando..." : "Recargar" }}
           </button>
         </div>
@@ -429,23 +402,15 @@ onMounted(() => {
                 <td colspan="6" class="texto-vacio">No hay clases registradas.</td>
               </tr>
 
-              <tr
-                v-for="clase in listaClases"
-                :key="clase._id || `${clase.nombre}-${clase.fechaHora}`"
-              >
+              <tr v-for="clase in listaClases" :key="clase._id || `${clase.nombre}-${clase.fechaHora}`">
                 <td>{{ clase.nombre || "-" }}</td>
                 <td class="columna-descripcion">{{ clase.descripcion || "-" }}</td>
                 <td>{{ formatearFecha(clase.fechaHora) }}</td>
                 <td>{{ clase.plazasMaximas ?? "-" }}</td>
                 <td>{{ obtenerPlazasRestantes(clase) }}</td>
                 <td class="columna-accion">
-                  <button
-                    type="button"
-                    class="boton boton-secundario boton-inscritos"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalInscritosClase"
-                    @click="abrirModalInscritos(clase)"
-                  >
+                  <button type="button" class="boton boton-secundario boton-inscritos" data-bs-toggle="modal"
+                    data-bs-target="#modalInscritosClase" @click="abrirModalInscritos(clase)">
                     VER INSCRITOS
                   </button>
                 </td>
@@ -456,33 +421,20 @@ onMounted(() => {
       </section>
     </section>
 
-    <div
-      id="modalInscritosClase"
-      class="modal fade"
-      tabindex="-1"
-      aria-labelledby="modalInscritosClaseLabel"
-      aria-hidden="true"
-    >
+    <div id="modalInscritosClase" class="modal fade" tabindex="-1" aria-labelledby="modalInscritosClaseLabel"
+      aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
             <h5 id="modalInscritosClaseLabel" class="modal-title">{{ tituloModal }}</h5>
-            <button
-              type="button"
-              class="btn-close btn-close-white"
-              data-bs-dismiss="modal"
-              aria-label="Cerrar"
-            />
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" />
           </div>
           <div class="modal-body">
             <p v-if="cargandoInscritos">Cargando inscritos...</p>
             <p v-else-if="mensajeErrorInscritos" class="mensaje-error-modal">{{ mensajeErrorInscritos }}</p>
             <ul v-else-if="listaInscritos.length" class="list-group">
-              <li
-                v-for="(nombreUsuario, indice) in listaInscritos"
-                :key="`${nombreUsuario}-${indice}`"
-                class="list-group-item"
-              >
+              <li v-for="(nombreUsuario, indice) in listaInscritos" :key="`${nombreUsuario}-${indice}`"
+                class="list-group-item">
                 {{ nombreUsuario }}
               </li>
             </ul>

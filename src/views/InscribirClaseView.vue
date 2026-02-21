@@ -46,9 +46,6 @@ function fechaEntendible(valor) {
   return fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
 }
 
-// -------------------------
-// Usuario / IDs
-// -------------------------
 function obtenerUsuarioIdLocal() {
   try {
     const raw = localStorage.getItem("user");
@@ -83,16 +80,11 @@ function normalizarId(valor) {
 function obtenerIdClase(clase) {
   return normalizarId(clase?._id);
 }
-
-// -------------------------
-// Inscritos / plazas
-// -------------------------
 function usuarioYaInscrito(clase) {
   if (!usuarioId.value) return false;
 
   const inscritos = Array.isArray(clase?.inscritos) ? clase.inscritos : [];
 
-  // Versión “humana”: recorremos y comparamos
   for (const idInscrito of inscritos) {
     if (normalizarId(idInscrito) === usuarioId.value) {
       return true;
@@ -187,7 +179,6 @@ async function inscribirse(clase) {
     console.error("[inscribir-clase] Error al inscribirse:", e);
     errorMsg.value = "Error de red al inscribirse";
   } finally {
-    // Quitamos el idClase de "clasesInscribiendo" SIN usar filter con callback
     const nuevaLista = [];
     for (const idGuardado of clasesInscribiendo.value) {
       if (idGuardado !== idClase) nuevaLista.push(idGuardado);
@@ -287,17 +278,10 @@ onMounted(alMontarComponente);
       <p v-else-if="!clasesHoy.length" class="estado">Hoy no hay clases activas.</p>
 
       <section v-if="!cargando && !errorMsg && clasesHoy.length" class="grid-clases">
-        <article
-          v-for="clase in clasesHoy"
-          :key="clase._id || `${clase.nombre}-${clase.fechaHora}`"
-          class="tarjeta-clase"
-        >
-          <img
-            v-if="obtenerRutaImagen(clase.imagen)"
-            :src="obtenerRutaImagen(clase.imagen)"
-            :alt="clase.nombre || 'Imagen de clase'"
-            class="imagen-clase"
-          />
+        <article v-for="clase in clasesHoy" :key="clase._id || `${clase.nombre}-${clase.fechaHora}`"
+          class="tarjeta-clase">
+          <img v-if="obtenerRutaImagen(clase.imagen)" :src="obtenerRutaImagen(clase.imagen)"
+            :alt="clase.nombre || 'Imagen de clase'" class="imagen-clase" />
 
           <div class="info-clase">
             <h2>{{ clase.nombre || "Clase" }}</h2>
@@ -309,22 +293,16 @@ onMounted(alMontarComponente);
             </div>
             <p class="dato">Plazas: {{ clase.plazasMaximas ?? "-" }}</p>
             <p class="plazas-disponibles">{{ obtenerPlazasRestantes(clase) }} RESTANTES</p>
-            <button
-              type="button"
-              class="btn-inscribirse"
-              :disabled="
-                !usuarioId ||
-                usuarioYaInscrito(clase) ||
-                estaInscribiendo(obtenerIdClase(clase))
-              "
-              @click="inscribirse(clase)"
-            >
+            <button type="button" class="btn-inscribirse" :disabled="!usuarioId ||
+              usuarioYaInscrito(clase) ||
+              estaInscribiendo(obtenerIdClase(clase))
+              " @click="inscribirse(clase)">
               {{
                 usuarioYaInscrito(clase)
                   ? "Inscrito"
                   : estaInscribiendo(obtenerIdClase(clase))
-                  ? "Inscribiendo..."
-                  : "Inscribirse"
+                    ? "Inscribiendo..."
+                    : "Inscribirse"
               }}
             </button>
             <p class="subtexto">
@@ -353,7 +331,8 @@ onMounted(alMontarComponente);
   background-color: var(--oscuro);
   padding: 0 6px;
 }
-.subtexto{
+
+.subtexto {
   font-size: smaller;
 }
 
@@ -379,9 +358,11 @@ a {
   border-bottom: solid 2px var(--oscuro);
   padding-bottom: 4px;
 }
-.active{
-    color: var(--verde);
+
+.active {
+  color: var(--verde);
 }
+
 a:hover {
   border-bottom: solid 2px var(--verde);
   transition: 0.3s;
@@ -471,7 +452,7 @@ h1 {
 }
 
 .fecha-campo .fecha-valor {
-  margin:4px;
+  margin: 4px;
   color: #9dc7ff;
   font-size: 0.95rem;
   font-weight: 600;

@@ -86,20 +86,9 @@ function irARegistro() {
         <h1>Iniciar sesion</h1>
 
         <label for="usuario">Usuario</label>
-        <input
-          id="usuario"
-          v-model="usuarioEscrito"
-          type="text"
-          placeholder="Escribe tu usuario"
-        />
-
-        <label for="contrasena">Contrasena</label>
-        <input
-          id="contrasena"
-          v-model="contrasenaEscrita"
-          type="password"
-          placeholder="Escribe tu contrasena"
-        />
+        <input id="usuario"v-model="usuarioEscrito"type="text"placeholder="Escribe tu usuario"/>
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena"v-model="contrasenaEscrita"type="password"placeholder="Escribe tu contraseña"/>
 
         <p v-if="mensajeError" class="texto-error">
           {{ mensajeError }}
@@ -108,9 +97,9 @@ function irARegistro() {
         <button type="button" @click="entrar">Entrar</button>
 
         <p class="texto-registro">
-          Aun no tienes cuenta?
+          ¿Aun no tienes cuenta?
           <button class="enlace-registro" type="button" @click="irARegistro">
-            Haz click aqui para registrarte
+            Haz click aqui para registrarte!
           </button>
         </p>
       </div>
