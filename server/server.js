@@ -26,6 +26,7 @@ let clasesCollection
 const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_TEXT, PORT, JWT_SECRET } = process.env
 const SERVER_PORT = Number(PORT) || 3002
 const JWT_SECRET_KEY = String(JWT_SECRET || 'evol_jwt_secret_dev').trim()
+const UNA_SEMANA_EN_MS = 7 * 24 * 60 * 60 * 1000
 
 const allowedOrigin = 'http://localhost:5173'
 app.use((req, res, next) => {
@@ -250,6 +251,9 @@ app.get('/clases', async (_, res) => {
     if (!clasesCollection) {
       return res.status(503).json({ ok: false, error: 'Mongo no conectado' })
     }
+
+    const fechaLimite = new Date(Date.now() - UNA_SEMANA_EN_MS)
+    await clasesCollection.deleteMany({ fechaHora: { $lt: fechaLimite } })
 
     const clases = await clasesCollection.find({}).sort({ fechaHora: 1 }).toArray()
     return res.json({ ok: true, clases })

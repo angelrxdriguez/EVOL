@@ -38,6 +38,12 @@ function formatearFecha(fechaIso) {
   return formateadorFecha.format(fecha);
 }
 
+function obtenerTimestamp(fechaIso) {
+  const timestamp = new Date(fechaIso).getTime();
+  if (Number.isNaN(timestamp)) return 0;
+  return timestamp;
+}
+
 function obtenerIdClase(clase) {
   const id = clase?._id;
 
@@ -228,7 +234,9 @@ async function cargarClases() {
     }
 
     if (Array.isArray(data?.clases)) {
-      listaClases.value = data.clases;
+      listaClases.value = [...data.clases].sort(
+        (claseA, claseB) => obtenerTimestamp(claseB?.fechaHora) - obtenerTimestamp(claseA?.fechaHora)
+      );
     } else {
       listaClases.value = [];
     }
