@@ -84,15 +84,15 @@ function irARegistro() {
 
       <div class="caja-login">
         <h1>Iniciar sesion</h1>
-
+        <p v-if="mensajeError" class="texto-error">
+          {{ mensajeError }}
+        </p>
         <label for="usuario">Usuario</label>
         <input id="usuario"v-model="usuarioEscrito"type="text"placeholder="Escribe tu usuario"/>
         <label for="contrasena">Contraseña</label>
         <input id="contrasena"v-model="contrasenaEscrita"type="password"placeholder="Escribe tu contraseña"/>
 
-        <p v-if="mensajeError" class="texto-error">
-          {{ mensajeError }}
-        </p>
+
 
         <button type="button" @click="entrar">Entrar</button>
 

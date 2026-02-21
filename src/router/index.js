@@ -59,26 +59,26 @@ function obtenerAcceso(path) {
   return routesByName.get(fallbackRouteName)?.path || "/";
 }
 
-function normalizePath(path) {
+function normalizaPath(path) {
   if (!path) return "/";
-  const parsed = path.startsWith("http")
+  const parseado = path.startsWith("http")
     ? new URL(path)
     : new URL(path, window.location.origin);
-  let normalized = parsed.pathname || "/";
+  let normalizado = parseado.pathname || "/";
 
-  if (!normalized.startsWith("/")) normalized = `/${normalized}`;
-  if (normalized.length > 1 && normalized.endsWith("/")) {
-    normalized = normalized.slice(0, -1);
+  if (!normalizado.startsWith("/")) normalizado = `/${normalizado}`;
+  if (normalizado.length > 1 && normalizado.endsWith("/")) {
+    normalizado = normalizado.slice(0, -1);
   }
 
-  return normalized;
+  return normalizado;
 }
 
-function toPath(target) {
-  if (typeof target === "string") return normalizePath(target);
+function path(target) {
+  if (typeof target === "string") return normalizaPath(target);
 
   if (target && typeof target === "object") {
-    if (target.path) return normalizePath(target.path);
+    if (target.path) return normalizaPath(target.path);
     if (target.name) {
       const route = routesByName.get(target.name);
       return route ? route.path : "/";
@@ -92,7 +92,7 @@ function encontrarRuta(path) {
   return routesByPath.get(path) || routesByName.get(fallbackRouteName);
 }
 
-const pathInicial = normalizePath(window.location.pathname);
+const pathInicial = normalizaPath(window.location.pathname);
 const pathInicialSeguro = obtenerAcceso(pathInicial);
 
 if (pathInicial !== pathInicialSeguro) {
@@ -102,7 +102,7 @@ if (pathInicial !== pathInicialSeguro) {
 const currentPath = ref(pathInicialSeguro);
 
 function applyNavigation(target, replace = false) {
-  const nextPath = obtenerAcceso(toPath(target));
+  const nextPath = obtenerAcceso(path(target));
   const current = currentPath.value;
 
   if (nextPath === current) return;
@@ -113,7 +113,7 @@ function applyNavigation(target, replace = false) {
     window.history.pushState({}, "", nextPath);
   }
 
-  currentPath.value = normalizePath(window.location.pathname);
+  currentPath.value = normalizaPath(window.location.pathname);
 }
 
 const router = {
@@ -127,7 +127,7 @@ const router = {
 };
 
 window.addEventListener("popstate", () => {
-  const path = normalizePath(window.location.pathname);
+  const path = normalizaPath(window.location.pathname);
   const pathSeguro = obtenerAcceso(path);
 
   if (path !== pathSeguro) {
@@ -156,7 +156,7 @@ const RouterLink = {
     },
   },
   setup(props, { attrs, slots }) {
-    const href = computed(() => toPath(props.to));
+    const href = computed(() => path(props.to));
 
     function onClick(event) {
       if (
