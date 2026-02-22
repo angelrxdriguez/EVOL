@@ -180,7 +180,6 @@ app.post('/registro', async (req, res) => {
       apellidos: apellidosLimpio,
       contrasena: contrasenaHash,
       es_admin: 0,
-      rol: 'user',
       createdAt: new Date(),
     })
 
@@ -236,7 +235,6 @@ app.post('/login', async (req, res) => {
         id: String(user._id),
         nombreUsuario: user.nombreUsuario,
         es_admin: esAdmin,
-        rol: user.rol || 'user',
         nombre: user.nombre || '',
         apellidos: user.apellidos || '',
       },
